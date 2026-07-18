@@ -19,6 +19,7 @@ const loginAdmin = async (req, res) => {
 
     // Column is "password" (not password_hash)
     const validPassword = await bcrypt.compare(password, admin.password);
+    
 
     if (!validPassword) {
       return res.status(401).json({ success: false, message: "Invalid email or password." });

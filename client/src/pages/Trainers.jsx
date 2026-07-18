@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { UserCheck, Plus, Search, Edit2, XCircle } from "lucide-react";
+import { UserCheck, Plus, Search, Edit2, XCircle, Users, ChevronDown, ChevronUp, Dumbbell, Trash2, X } from "lucide-react";
 import api from "../services/api";
+
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const statusColors = {
   Active: "bg-green-100 text-green-700",
@@ -79,12 +81,197 @@ function TrainerModal({ trainer, onClose, onSave }) {
   );
 }
 
+function MemberRow({ member, trainer, exercises }) {
+  const [expanded, setExpanded] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [form, setForm] = useState({ exercise_id: "", sets: "", reps: "", duration_minutes: "", session_date: "" });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const dayOptions = member.preferred_days?.length > 0 ? member.preferred_days : DAYS;
+
+  const fetchSessions = () => {
+    setLoadingSessions(true);
+    api.get(`/workouts/member/${member.user_id}`)
+      .then((res) => setSessions(res.data.data || []))
+      .catch((err) => console.error(err))
+      .finally(() => setLoadingSessions(false));
+  };
+
+  const toggleExpand = () => {
+    const next = !expanded;
+    setExpanded(next);
+    if (next && sessions.length === 0) fetchSessions();
+  };
+
+  const handleAssign = async () => {
+    if (!form.exercise_id || !form.session_date) {
+      setError("Please pick an exercise and a day.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      await api.post("/workouts/assign", {
+        ...form,
+        user_id: member.user_id,
+        trainer_id: trainer.trainer_id,
+      });
+      setForm({ exercise_id: "", sets: "", reps: "", duration_minutes: "", session_date: "" });
+      fetchSessions();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to assign workout.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteSession = async (sessionId) => {
+    await api.delete(`/workouts/session/${sessionId}`);
+    fetchSessions();
+  };
+
+  return (
+    <div className="border border-slate-200 rounded-xl overflow-hidden">
+      <button onClick={toggleExpand} className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition text-left">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+            {member.first_name?.charAt(0)}{member.last_name?.charAt(0)}
+          </div>
+          <div>
+            <p className="font-semibold text-slate-800 text-sm">{member.first_name} {member.last_name}</p>
+            <p className="text-slate-400 text-xs">{member.fitness_goal || "No goal set"} · {member.email}</p>
+          </div>
+        </div>
+        {expanded ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 border-t border-slate-100 bg-slate-50/50">
+          {/* Assign form */}
+          <div className="pt-4 grid grid-cols-2 sm:grid-cols-5 gap-2 items-end">
+            <div className="col-span-2 sm:col-span-2">
+              <label className="block text-xs text-slate-500 mb-1">Exercise</label>
+              <select value={form.exercise_id} onChange={(e) => setForm({ ...form, exercise_id: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg px-2 py-2 text-xs">
+                <option value="">Select...</option>
+                {exercises.map((e) => (
+                  <option key={e.exercise_id} value={e.exercise_id}>{e.exercise_name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Sets</label>
+              <input type="number" value={form.sets} onChange={(e) => setForm({ ...form, sets: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg px-2 py-2 text-xs" />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Reps</label>
+              <input type="number" value={form.reps} onChange={(e) => setForm({ ...form, reps: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg px-2 py-2 text-xs" />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Day</label>
+              <select value={form.session_date} onChange={(e) => setForm({ ...form, session_date: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg px-2 py-2 text-xs">
+                <option value="">Select...</option>
+                {dayOptions.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+          </div>
+          {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
+          <button onClick={handleAssign} disabled={saving}
+            className="mt-3 flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-2 rounded-lg transition">
+            <Plus size={14} /> {saving ? "Assigning..." : "Assign Workout"}
+          </button>
+
+          {/* Assigned sessions */}
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-slate-500 mb-2">Assigned Workouts</p>
+            {loadingSessions ? (
+              <p className="text-xs text-slate-400">Loading...</p>
+            ) : sessions.length === 0 ? (
+              <p className="text-xs text-slate-400">No workouts assigned yet.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {sessions.map((s) => (
+                  <div key={s.session_id} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2 text-xs">
+                      <Dumbbell size={14} className="text-blue-500" />
+                      <span className="font-medium text-slate-700">{s.exercise_name || "Exercise"}</span>
+                      <span className="text-slate-400">· {s.session_date}</span>
+                      {s.sets && <span className="text-slate-400">· {s.sets}x{s.reps || "?"}</span>}
+                      {s.completed && <span className="text-green-500 font-medium">✓ Done</span>}
+                    </div>
+                    <button onClick={() => handleDeleteSession(s.session_id)} className="text-red-400 hover:text-red-600">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RosterModal({ trainer, onClose }) {
+  const [members, setMembers] = useState([]);
+  const [exercises, setExercises] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      api.get(`/trainers/${trainer.trainer_id}/roster`),
+      api.get("/workouts"),
+    ])
+      .then(([rosterRes, exercisesRes]) => {
+        setMembers(rosterRes.data.data || []);
+        setExercises(exercisesRes.data.data || []);
+      })
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }, [trainer.trainer_id]);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+        <div className="p-6 border-b flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <Users size={20} className="text-blue-500" /> {trainer.full_name}'s Roster
+            </h2>
+            <p className="text-slate-500 text-sm mt-0.5">Assign workouts to each member's weekly schedule.</p>
+          </div>
+          <button onClick={onClose}><X size={20} className="text-slate-400" /></button>
+        </div>
+
+        <div className="p-6 overflow-y-auto space-y-3">
+          {loading ? (
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}
+            </div>
+          ) : members.length === 0 ? (
+            <p className="text-center text-slate-400 py-12 text-sm">No members have chosen this coach yet.</p>
+          ) : (
+            members.map((m) => <MemberRow key={m.user_id} member={m} trainer={trainer} exercises={exercises} />)
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Trainers() {
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editTrainer, setEditTrainer] = useState(null);
+  const [rosterTrainer, setRosterTrainer] = useState(null);
 
   const fetchTrainers = () => {
     setLoading(true);
@@ -125,6 +312,13 @@ export default function Trainers() {
           trainer={editTrainer}
           onClose={() => setShowModal(false)}
           onSave={fetchTrainers}
+        />
+      )}
+
+      {rosterTrainer && (
+        <RosterModal
+          trainer={rosterTrainer}
+          onClose={() => setRosterTrainer(null)}
         />
       )}
 
@@ -207,6 +401,13 @@ export default function Trainers() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setRosterTrainer(trainer)}
+                          className="p-1.5 rounded-lg hover:bg-green-50 text-green-500 transition"
+                          title="View Roster / Assign Workouts"
+                        >
+                          <Users size={16} />
+                        </button>
                         <button
                           onClick={() => handleEdit(trainer)}
                           className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition"

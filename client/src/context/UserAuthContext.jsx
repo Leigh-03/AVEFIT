@@ -24,6 +24,15 @@ export function UserAuthProvider({ children }) {
     localStorage.setItem("avefit_user", JSON.stringify(userData));
   };
 
+  // Patch the cached user object without a full re-login (e.g. after onboarding completes).
+  const updateUser = (patch) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...patch };
+      localStorage.setItem("avefit_user", JSON.stringify(next));
+      return next;
+    });
+  };
+
   const logoutUser = () => {
     setUser(null);
     setToken(null);
@@ -32,7 +41,7 @@ export function UserAuthProvider({ children }) {
   };
 
   return (
-    <UserAuthContext.Provider value={{ user, token, loading, loginUser, logoutUser }}>
+    <UserAuthContext.Provider value={{ user, token, loading, loginUser, updateUser, logoutUser }}>
       {children}
     </UserAuthContext.Provider>
   );

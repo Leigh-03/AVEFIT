@@ -15,7 +15,7 @@ function Row({ label, value }) {
 
 export default function SetupConfirmation() {
   const navigate = useNavigate();
-  const { user } = useUserAuth();
+  const { user, updateUser } = useUserAuth();
   const [profile, setProfile] = useState(null);
   const [goalData, setGoalData] = useState({});
   const [healthData, setHealthData] = useState({});
@@ -82,6 +82,7 @@ export default function SetupConfirmation() {
       sessionStorage.removeItem("avefit_availability");
       sessionStorage.removeItem("avefit_trainer");
 
+      updateUser({ setup_completed: true });
       navigate("/user/workout");
     } catch (err) {
       console.error(err);

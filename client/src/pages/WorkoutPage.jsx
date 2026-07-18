@@ -1,101 +1,25 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, CheckCircle, RotateCcw, Dumbbell, X, Moon } from "lucide-react";
+import { Trash2, CheckCircle, RotateCcw, Dumbbell, Moon } from "lucide-react";
 import { useUserAuth } from "../context/UserAuthContext";
 import userApi from "../userApi";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-function AddWorkoutModal({ exercises, workoutDays, onClose, onSave }) {
-  const [form, setForm] = useState({ exercise_id: "", sets: "", reps: "", duration_minutes: "", session_date: "" });
-  const [saving, setSaving] = useState(false);
-
-  const handleSubmit = async () => {
-    if (!form.exercise_id) return;
-    setSaving(true);
-    try {
-      await userApi.post("/workouts", form);
-      onSave();
-      onClose();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-end justify-center z-50">
-      <div className="bg-slate-800 rounded-t-3xl w-full max-w-lg p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-white">Add Workout</h3>
-          <button onClick={onClose}><X size={20} className="text-slate-400" /></button>
-        </div>
-
-        <div>
-          <label className="block text-sm text-slate-400 mb-1">Exercise *</label>
-          <select value={form.exercise_id} onChange={(e) => setForm({ ...form, exercise_id: e.target.value })}
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm">
-            <option value="">Select exercise...</option>
-            {exercises.map((e) => (
-              <option key={e.exercise_id} value={e.exercise_id}>{e.exercise_name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: "Sets", key: "sets" },
-            { label: "Reps", key: "reps" },
-            { label: "Duration (min)", key: "duration_minutes" },
-          ].map((f) => (
-            <div key={f.key}>
-              <label className="block text-xs text-slate-400 mb-1">{f.label}</label>
-              <input type="number" value={form[f.key]} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm" />
-            </div>
-          ))}
-        </div>
-
-        <div>
-          <label className="block text-sm text-slate-400 mb-1">Day</label>
-          <select value={form.session_date} onChange={(e) => setForm({ ...form, session_date: e.target.value })}
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm">
-            <option value="">Select day...</option>
-            {(workoutDays && workoutDays.length > 0 ? workoutDays : DAYS).map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
-        </div>
-
-        <div className="flex gap-3 pt-2">
-          <button onClick={onClose} className="flex-1 border border-slate-700 text-slate-300 py-3 rounded-xl text-sm font-medium">Cancel</button>
-          <button onClick={handleSubmit} disabled={saving || !form.exercise_id}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-3 rounded-xl text-sm font-bold">
-            {saving ? "Adding..." : "Add Workout"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function WorkoutPage() {
   const { user } = useUserAuth();
   const [sessions, setSessions] = useState([]);
-  const [exercises, setExercises] = useState([]);
   const [workoutDays, setWorkoutDays] = useState([]); // days the user picked as their availability
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
   const [activeDay, setActiveDay] = useState("Monday");
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [sessionsRes, exercisesRes, profileRes] = await Promise.all([
+      const [sessionsRes, profileRes] = await Promise.all([
         userApi.get("/workouts"),
-        userApi.get("/exercises"),
         userApi.get("/profile"),
       ]);
       setSessions(sessionsRes.data.data || []);
-      setExercises(exercisesRes.data.data || []);
       const days = profileRes.data.data?.preferred_days || [];
       setWorkoutDays(days);
       if (days.length > 0 && !days.includes(activeDay)) {
@@ -133,15 +57,6 @@ export default function WorkoutPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      {showModal && (
-        <AddWorkoutModal
-          exercises={exercises}
-          workoutDays={workoutDays}
-          onClose={() => setShowModal(false)}
-          onSave={fetchData}
-        />
-      )}
-
       {/* Header */}
       <div className="bg-gradient-to-b from-blue-900/50 to-slate-950 px-6 pt-12 pb-6">
         <p className="text-slate-400 text-sm">Welcome back,</p>
@@ -196,16 +111,10 @@ export default function WorkoutPage() {
       <div className="px-6 py-4 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-bold text-white">{activeDay}'s Workouts</h2>
-          {isWorkoutDay(activeDay) && (
-            <div className="flex gap-2">
-              <button onClick={handleReset} className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-400 transition">
-                <RotateCcw size={14} /> Reset
-              </button>
-              <button onClick={() => setShowModal(true)}
-                className="flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition">
-                <Plus size={14} /> Add
-              </button>
-            </div>
+          {isWorkoutDay(activeDay) && daySessions.length > 0 && (
+            <button onClick={handleReset} className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-400 transition">
+              <RotateCcw size={14} /> Reset
+            </button>
           )}
         </div>
 
@@ -222,9 +131,8 @@ export default function WorkoutPage() {
         ) : daySessions.length === 0 ? (
           <div className="text-center py-16">
             <Dumbbell size={40} className="mx-auto text-slate-700 mb-3" />
-            <p className="text-slate-500">No workouts for {activeDay}</p>
-            <button onClick={() => setShowModal(true)}
-              className="mt-4 text-blue-400 text-sm hover:underline">Add a workout</button>
+            <p className="text-slate-500">No workouts assigned for {activeDay} yet</p>
+            <p className="text-slate-600 text-xs mt-1">Your coach will add your training plan here.</p>
           </div>
         ) : (
           daySessions.map((session) => (

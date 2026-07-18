@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 // POST register
 const register = async (req, res) => {
   try {
-    const { first_name, last_name, email, password } = req.body;
+    const { first_name, last_name, email, password, phone } = req.body;
     if (!first_name || !last_name || !email || !password)
       return res.status(400).json({ success: false, message: "All fields are required." });
 
@@ -15,11 +15,21 @@ const register = async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
     const result = await pool.query(`
-      INSERT INTO users (first_name, last_name, email, password)
-      VALUES ($1,$2,$3,$4) RETURNING user_id, first_name, last_name, email
-    `, [first_name, last_name, email, hashed]);
+      INSERT INTO users (first_name, last_name, email, password, phone)
+      VALUES ($1,$2,$3,$4,$5)
+      RETURNING user_id, first_name, last_name, email, phone, fitness_goal, height, weight, gender, activity_level, setup_completed
+    `, [first_name, last_name, email, hashed, phone || null]);
 
-    res.status(201).json({ success: true, message: "Account created.", user: result.rows[0] });
+    const user = result.rows[0];
+
+    // Auto-login: hand back a token right away so the person doesn't have to log in twice.
+    const token = jwt.sign(
+      { user_id: user.user_id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "8h" }
+    );
+
+    res.status(201).json({ success: true, message: "Account created.", token, user });
   } catch (err) {
     console.error("register error:", err.message);
     res.status(500).json({ success: false, message: err.message });
@@ -53,11 +63,13 @@ const login = async (req, res) => {
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
+        phone: user.phone,
         fitness_goal: user.fitness_goal,
         height: user.height,
         weight: user.weight,
         gender: user.gender,
         activity_level: user.activity_level,
+        setup_completed: user.setup_completed,
       },
     });
   } catch (err) {

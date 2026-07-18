@@ -42,6 +42,16 @@ function UserProtectedRoute({ children }) {
   return children;
 }
 
+// Guards the post-onboarding dashboard routes: bounces anyone who hasn't
+// finished the assessment/goal/availability/coach flow back into it.
+function DashboardProtectedRoute({ children }) {
+  const token = localStorage.getItem("avefit_user_token");
+  if (!token) return <Navigate to="/user/login" replace />;
+  const savedUser = JSON.parse(localStorage.getItem("avefit_user") || "null");
+  if (savedUser && !savedUser.setup_completed) return <Navigate to="/user/assessment" replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <UserAuthProvider>
@@ -86,7 +96,7 @@ export default function App() {
         <Route
           path="/user/*"
           element={
-            <UserProtectedRoute>
+            <DashboardProtectedRoute>
               <UserLayout>
                 <Routes>
                   <Route path="/workout" element={<WorkoutPage />} />
@@ -97,7 +107,7 @@ export default function App() {
                   <Route path="*" element={<Navigate to="/user/workout" replace />} />
                 </Routes>
               </UserLayout>
-            </UserProtectedRoute>
+            </DashboardProtectedRoute>
           }
         />
 
