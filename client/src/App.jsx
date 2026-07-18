@@ -1,0 +1,109 @@
+import { Routes, Route, Navigate } from "react-router-dom";
+import { UserAuthProvider } from "./context/UserAuthContext";
+
+// Admin
+import DashboardLayout from "./layouts/DashboardLayout";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Members from "./pages/Members";
+import Trainers from "./pages/Trainers";
+import Workouts from "./pages/Workouts";
+import WorkoutPlans from "./pages/WorkoutPlans";
+import Nutrition from "./pages/Nutrition";
+import Analytics from "./pages/Analytics";
+import Settings from "./pages/Settings";
+import Notifications from "./pages/Notifications";
+
+// User
+import Homepage from "./pages/Homepage";
+import UserLogin from "./pages/UserLogin";
+import Assessment from "./pages/Assessment";
+import GoalSetup from "./pages/GoalSetup";
+import HealthConditions from "./pages/HealthConditions";
+import Availability from "./pages/Availability";
+import CoachSelect from "./pages/CoachSelect";
+import SetupConfirmation from "./pages/SetupConfirmation";
+import UserLayout from "./pages/UserLayout";
+import WorkoutPage from "./pages/WorkoutPage";
+import ProgressPage from "./pages/ProgressPage";
+import ExerciseLibrary from "./pages/ExerciseLibrary";
+import AboutUs from "./pages/AboutUs";
+import ProfilePage from "./pages/ProfilePage";
+
+function AdminProtectedRoute({ children }) {
+  const token = localStorage.getItem("avefit_token");
+  if (!token) return <Navigate to="/login" replace />;
+  return children;
+}
+
+function UserProtectedRoute({ children }) {
+  const token = localStorage.getItem("avefit_user_token");
+  if (!token) return <Navigate to="/user/login" replace />;
+  return children;
+}
+
+export default function App() {
+  return (
+    <UserAuthProvider>
+      <Routes>
+        {/* Public homepage */}
+        <Route path="/" element={<Homepage />} />
+
+        {/* Admin Portal */}
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/admin/*"
+          element={
+            <AdminProtectedRoute>
+              <DashboardLayout>
+                <Routes>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/members" element={<Members />} />
+                  <Route path="/trainers" element={<Trainers />} />
+                  <Route path="/workouts" element={<Workouts />} />
+                  <Route path="/workout-plans" element={<WorkoutPlans />} />
+                  <Route path="/nutrition" element={<Nutrition />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+                </Routes>
+              </DashboardLayout>
+            </AdminProtectedRoute>
+          }
+        />
+
+        {/* User Onboarding (no layout) */}
+        <Route path="/user/login" element={<UserLogin />} />
+        <Route path="/user/assessment" element={<UserProtectedRoute><Assessment /></UserProtectedRoute>} />
+        <Route path="/user/goal" element={<UserProtectedRoute><GoalSetup /></UserProtectedRoute>} />
+        <Route path="/user/health" element={<UserProtectedRoute><HealthConditions /></UserProtectedRoute>} />
+        <Route path="/user/availability" element={<UserProtectedRoute><Availability /></UserProtectedRoute>} />
+        <Route path="/user/coach" element={<UserProtectedRoute><CoachSelect /></UserProtectedRoute>} />
+        <Route path="/user/confirm" element={<UserProtectedRoute><SetupConfirmation /></UserProtectedRoute>} />
+
+        {/* User Portal (with bottom nav layout) */}
+        <Route
+          path="/user/*"
+          element={
+            <UserProtectedRoute>
+              <UserLayout>
+                <Routes>
+                  <Route path="/workout" element={<WorkoutPage />} />
+                  <Route path="/progress" element={<ProgressPage />} />
+                  <Route path="/exercises" element={<ExerciseLibrary />} />
+                  <Route path="/about" element={<AboutUs />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="*" element={<Navigate to="/user/workout" replace />} />
+                </Routes>
+              </UserLayout>
+            </UserProtectedRoute>
+          }
+        />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </UserAuthProvider>
+  );
+}
