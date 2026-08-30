@@ -56,21 +56,21 @@ export default function WorkoutPage() {
   const completedCount = sessions.filter((s) => s.completed).length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-white text-slate-900">
       {/* Header */}
-      <div className="bg-gradient-to-b from-blue-900/50 to-slate-950 px-6 pt-12 pb-6">
+      <div className="bg-black px-6 pt-12 pb-6">
         <p className="text-slate-400 text-sm">Welcome back,</p>
         <h1 className="text-2xl font-bold text-white">{user?.first_name || "Athlete"} 👋</h1>
 
         {/* Progress bar */}
-        <div className="mt-4 bg-slate-800 rounded-2xl p-4">
+        <div className="mt-4 bg-white rounded-2xl p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-slate-400">Weekly Progress</span>
-            <span className="text-sm font-bold text-blue-400">{completedCount}/{sessions.length} done</span>
+            <span className="text-sm text-slate-500">Weekly Progress</span>
+            <span className="text-sm font-bold text-orange-500">{completedCount}/{sessions.length} done</span>
           </div>
-          <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-500 rounded-full transition-all"
+              className="h-full bg-orange-500 rounded-full transition-all"
               style={{ width: sessions.length > 0 ? `${(completedCount / sessions.length) * 100}%` : "0%" }}
             />
           </div>
@@ -89,17 +89,17 @@ export default function WorkoutPage() {
                 onClick={() => setActiveDay(day)}
                 className={`flex flex-col items-center px-4 py-3 rounded-2xl text-sm font-medium transition min-w-[60px] ${
                   activeDay === day
-                    ? "bg-blue-600 text-white"
+                    ? "bg-orange-500 text-white"
                     : restDay
-                    ? "bg-slate-900 text-slate-600"
-                    : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                    ? "bg-slate-50 text-slate-600"
+                    : "bg-white text-slate-500 hover:bg-slate-100"
                 }`}
               >
                 <span>{day.slice(0, 3)}</span>
                 {restDay ? (
-                  <Moon size={10} className={`mt-1 ${activeDay === day ? "text-blue-200" : "text-slate-600"}`} />
+                  <Moon size={10} className={`mt-1 ${activeDay === day ? "text-orange-400" : "text-slate-600"}`} />
                 ) : hasWorkout ? (
-                  <div className={`w-1.5 h-1.5 rounded-full mt-1 ${activeDay === day ? "bg-white" : "bg-blue-500"}`} />
+                  <div className={`w-1.5 h-1.5 rounded-full mt-1 ${activeDay === day ? "bg-white" : "bg-orange-500"}`} />
                 ) : null}
               </button>
             );
@@ -110,9 +110,9 @@ export default function WorkoutPage() {
       {/* Workout List */}
       <div className="px-6 py-4 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="font-bold text-white">{activeDay}'s Workouts</h2>
+          <h2 className="font-bold text-slate-900">{activeDay}'s Workouts</h2>
           {isWorkoutDay(activeDay) && daySessions.length > 0 && (
-            <button onClick={handleReset} className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-400 transition">
+            <button onClick={handleReset} className="flex items-center gap-1 text-xs text-slate-500 hover:text-red-400 transition">
               <RotateCcw size={14} /> Reset
             </button>
           )}
@@ -120,12 +120,12 @@ export default function WorkoutPage() {
 
         {loading ? (
           <div className="space-y-3">
-            {[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-slate-800 rounded-2xl animate-pulse" />)}
+            {[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse" />)}
           </div>
         ) : !isWorkoutDay(activeDay) ? (
           <div className="text-center py-16">
             <Moon size={40} className="mx-auto text-slate-700 mb-3" />
-            <p className="text-white font-semibold">Rest Day</p>
+            <p className="text-slate-900 font-semibold">Rest Day</p>
             <p className="text-slate-500 text-sm mt-1">You didn't set {activeDay} as a workout day — recover and come back stronger.</p>
           </div>
         ) : daySessions.length === 0 ? (
@@ -137,14 +137,14 @@ export default function WorkoutPage() {
         ) : (
           daySessions.map((session) => (
             <div key={session.session_id}
-              className={`bg-slate-800 rounded-2xl p-4 border ${session.completed ? "border-green-500/30" : "border-slate-700"}`}>
+              className={`bg-white rounded-2xl p-4 border ${session.completed ? "border-green-500/30" : "border-slate-200"}`}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <p className={`font-semibold ${session.completed ? "text-slate-400 line-through" : "text-white"}`}>
+                  <p className={`font-semibold ${session.completed ? "text-slate-500 line-through" : "text-slate-900"}`}>
                     {session.exercise_name || "Workout"}
                   </p>
                   <p className="text-xs text-slate-500 mt-0.5">{session.muscle_group || ""}</p>
-                  <div className="flex gap-3 mt-2 text-xs text-slate-400">
+                  <div className="flex gap-3 mt-2 text-xs text-slate-500">
                     {session.sets && <span>💪 {session.sets} sets</span>}
                     {session.reps && <span>🔁 {session.reps} reps</span>}
                     {session.duration_minutes && <span>⏱ {session.duration_minutes} min</span>}

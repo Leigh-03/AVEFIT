@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const verifyUser = require("../middleware/userAuthMiddleware");
-const { register, login, getProfile, updateProfile } = require("../controllers/userController");
+const { register, login, getProfile, updateProfile, updatePhoto } = require("../controllers/userController");
 const { getUserWorkoutPlan, getUserPlans, addWorkoutSession, updateWorkoutSession, completeSession, deleteWorkoutSession, resetWeek } = require("../controllers/userWorkoutController");
 const { getProgress, logProgress, calculatePrediction, autoPredict, getUserNotifications } = require("../controllers/userProgressController");
 const { getActiveTrainers } = require("../controllers/trainerController");
@@ -13,6 +13,7 @@ router.post("/login", login);
 // Profile
 router.get("/profile", verifyUser, getProfile);
 router.put("/profile", verifyUser, updateProfile);
+router.put("/profile/photo", verifyUser, updatePhoto);
 
 // Workouts
 router.get("/workouts", verifyUser, getUserWorkoutPlan);

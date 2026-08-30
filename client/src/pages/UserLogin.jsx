@@ -62,23 +62,23 @@ export default function UserLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-white via-orange-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-blue-400">AveFit</h1>
-          <p className="text-slate-400 mt-1">Avenue Power and Fitness Gym</p>
+          <h1 className="text-4xl font-bold text-orange-500">AveFit</h1>
+          <p className="text-slate-500 mt-1">Avenue Power and Fitness Gym</p>
         </div>
 
-        <div className="bg-slate-800 rounded-3xl p-8 shadow-2xl border border-slate-700">
+        <div className="bg-white rounded-3xl p-8 shadow-2xl border border-slate-200">
           {/* Toggle */}
-          <div className="flex bg-slate-900 rounded-xl p-1 mb-6">
+          <div className="flex bg-slate-50 rounded-xl p-1 mb-6">
             {["login", "signup"].map((m) => (
               <button
                 key={m}
                 onClick={() => { setMode(m); setError(""); }}
                 className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition ${
-                  mode === m ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+                  mode === m ? "bg-orange-500 text-white" : "text-slate-500 hover:text-white"
                 }`}
               >
                 {m === "login" ? "Log In" : "Sign Up"}
@@ -89,18 +89,18 @@ export default function UserLogin() {
           {mode === "login" ? (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Email Address</label>
                 <input
                   type="email"
                   value={loginForm.email}
                   onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                   placeholder="your@email.com"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Password</label>
                 <div className="relative">
                   <input
                     type={showPass ? "text" : "password"}
@@ -108,29 +108,29 @@ export default function UserLogin() {
                     onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                     onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                     placeholder="••••••••"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 pr-12"
                   />
                   <button
                     onClick={() => setShowPass(!showPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-900"
                   >
                     {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 text-slate-400 cursor-pointer">
+                <label className="flex items-center gap-2 text-slate-500 cursor-pointer">
                   <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)}
                     className="rounded" />
                   Remember me
                 </label>
-                <button className="text-blue-400 hover:underline">Forgot Password?</button>
+                <button className="text-orange-500 hover:underline">Forgot Password?</button>
               </div>
               {error && <p className="text-red-400 text-sm text-center">{error}</p>}
               <button
                 onClick={handleLogin}
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition"
+                className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition"
               >
                 {loading ? "Logging in..." : "Login"}
               </button>
@@ -139,65 +139,65 @@ export default function UserLogin() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">First Name</label>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">First Name</label>
                   <input
                     type="text"
                     value={signupForm.first_name}
                     onChange={(e) => setSignupForm({ ...signupForm, first_name: e.target.value })}
                     placeholder="Juan"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Last Name</label>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">Last Name</label>
                   <input
                     type="text"
                     value={signupForm.last_name}
                     onChange={(e) => setSignupForm({ ...signupForm, last_name: e.target.value })}
                     placeholder="dela Cruz"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Email Address</label>
                 <input
                   type="email"
                   value={signupForm.email}
                   onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })}
                   placeholder="your@email.com"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Phone Number</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Phone Number</label>
                 <input
                   type="tel"
                   value={signupForm.phone}
                   onChange={(e) => setSignupForm({ ...signupForm, phone: e.target.value })}
                   placeholder="09XX XXX XXXX"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Password</label>
                 <div className="relative">
                   <input
                     type={showPass ? "text" : "password"}
                     value={signupForm.password}
                     onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
                     placeholder="••••••••"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 pr-12"
                   />
                   <button
                     onClick={() => setShowPass(!showPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-900"
                   >
                     {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
-              <label className="flex items-start gap-2 text-slate-400 text-sm cursor-pointer">
+              <label className="flex items-start gap-2 text-slate-500 text-sm cursor-pointer">
                 <input
                   type="checkbox"
                   checked={signupForm.agreed}
@@ -210,7 +210,7 @@ export default function UserLogin() {
               <button
                 onClick={handleSignup}
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition"
+                className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition"
               >
                 {loading ? "Creating account..." : "Create Account"}
               </button>
@@ -219,7 +219,7 @@ export default function UserLogin() {
         </div>
 
         <p className="text-center text-slate-500 text-sm mt-6">
-          <button onClick={() => navigate("/")} className="hover:text-slate-300 transition">
+          <button onClick={() => navigate("/")} className="hover:text-slate-600 transition">
             ← Back to Homepage
           </button>
         </p>

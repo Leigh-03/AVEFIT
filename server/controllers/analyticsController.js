@@ -67,16 +67,19 @@ const getAnalytics = async (req, res) => {
       GROUP BY category
     `);
 
-    // Workout sessions completed per month
+    // Completed workout sessions by day of week (session_date stores day
+    // names like "Monday".."Sunday", not calendar dates, so a monthly
+    // breakdown isn't possible — day-of-week is the meaningful grouping here)
     const attendance = await pool.query(`
-      SELECT
-        TO_CHAR(DATE_TRUNC('month', session_date), 'Mon') AS month,
-        COUNT(*) AS count
+      SELECT session_date AS day, COUNT(*) AS count
       FROM workout_sessions
-      WHERE completed = true
-        AND session_date >= NOW() - INTERVAL '6 months'
-      GROUP BY DATE_TRUNC('month', session_date)
-      ORDER BY DATE_TRUNC('month', session_date) ASC
+      WHERE completed = true AND session_date IS NOT NULL
+      GROUP BY session_date
+      ORDER BY CASE session_date
+        WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3
+        WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6
+        WHEN 'Sunday' THEN 7 ELSE 8
+      END
     `);
 
     // Summary

@@ -29,17 +29,17 @@ export default function Navbar() {
   }, [location.pathname]);
 
   return (
-    <header className="bg-white shadow-sm border-b px-8 py-4 flex items-center justify-between">
+    <header className="bg-black border-b border-slate-900 px-8 py-4 flex items-center justify-between">
       <div>
-        <h2 className="text-2xl font-bold text-slate-800">{pageTitle}</h2>
+        <h2 className="text-2xl font-bold text-white">{pageTitle}</h2>
       </div>
-      <div className="hidden md:flex items-center bg-slate-100 rounded-lg px-3 py-2 w-80">
-        <Search size={18} className="text-gray-500" />
-        <input type="text" placeholder="Search..." className="bg-transparent outline-none ml-2 w-full text-sm" />
+      <div className="hidden md:flex items-center bg-slate-800 rounded-lg px-3 py-2 w-80">
+        <Search size={18} className="text-slate-400" />
+        <input type="text" placeholder="Search..." className="bg-transparent outline-none ml-2 w-full text-sm text-white placeholder-slate-500" />
       </div>
       <div className="flex items-center gap-6">
-        <button onClick={() => navigate("/admin/notifications")} className="relative hover:bg-slate-100 p-2 rounded-lg transition">
-          <Bell size={22} className="text-slate-600" />
+        <button onClick={() => navigate("/admin/notifications")} className="relative hover:bg-slate-800 p-2 rounded-lg transition">
+          <Bell size={22} className="text-slate-300" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
               {unreadCount > 9 ? "9+" : unreadCount}
@@ -47,10 +47,14 @@ export default function Navbar() {
           )}
         </button>
         <div className="flex items-center gap-2">
-          <UserCircle size={32} className="text-slate-500" />
+          {admin.photo_url ? (
+            <img src={admin.photo_url} alt="Admin" className="w-8 h-8 rounded-full object-cover" />
+          ) : (
+            <UserCircle size={32} className="text-slate-400" />
+          )}
           <div>
-            <p className="font-semibold text-slate-800 text-sm">{admin.name || "Administrator"}</p>
-            <p className="text-xs text-gray-500">Administrator</p>
+            <p className="font-semibold text-white text-sm">{admin.name || "Administrator"}</p>
+            <p className="text-xs text-slate-500">Administrator</p>
           </div>
         </div>
       </div>

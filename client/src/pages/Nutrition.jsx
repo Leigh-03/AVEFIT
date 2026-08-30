@@ -6,11 +6,15 @@ export default function Nutrition() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [fetchError, setFetchError] = useState("");
 
   useEffect(() => {
     api.get("/nutrition")
       .then((res) => setPlans(res.data.data))
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        setFetchError(err.response?.data?.message || err.message || "Couldn't load meal plans.");
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -21,6 +25,11 @@ export default function Nutrition() {
 
   return (
     <div className="space-y-6">
+      {fetchError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          ⚠️ {fetchError}
+        </div>
+      )}
       <div>
         <h1 className="text-3xl font-bold text-slate-800">Meal Plans</h1>
         <p className="text-slate-500 mt-1">Dietary plans assigned to members.</p>

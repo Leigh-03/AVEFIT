@@ -92,9 +92,11 @@ export default function WorkoutPlans() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [fetchError, setFetchError] = useState("");
 
   const fetchData = () => {
     setLoading(true);
+    setFetchError("");
     Promise.all([
       api.get("/workouts/plans"),
       api.get("/members"),
@@ -105,7 +107,10 @@ export default function WorkoutPlans() {
         setMembers(memRes.data.data);
         setTrainers(trainerRes.data.data);
       })
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        setFetchError(err.response?.data?.message || err.message || "Couldn't load workout plans.");
+      })
       .finally(() => setLoading(false));
   };
 
@@ -132,6 +137,12 @@ export default function WorkoutPlans() {
           onClose={() => setShowModal(false)}
           onSave={fetchData}
         />
+      )}
+
+      {fetchError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          ⚠️ {fetchError}
+        </div>
       )}
 
       <div className="flex items-center justify-between">

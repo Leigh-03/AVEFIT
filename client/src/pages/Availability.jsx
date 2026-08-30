@@ -11,8 +11,8 @@ function Chip({ label, selected, onClick }) {
       onClick={onClick}
       className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition ${
         selected
-          ? "border-blue-500 bg-blue-500/20 text-blue-300"
-          : "border-slate-700 text-slate-400 hover:border-slate-600"
+          ? "border-orange-500 bg-orange-500/20 text-orange-500"
+          : "border-slate-200 text-slate-500 hover:border-slate-300"
       }`}
     >
       {label}
@@ -68,26 +68,26 @@ export default function Availability() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-white via-orange-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Progress */}
         <div className="flex items-center gap-2 mb-8">
           {[1, 2, 3, 4, 5, 6].map((step) => (
-            <div key={step} className={`flex-1 h-1.5 rounded-full ${step <= 4 ? "bg-blue-500" : "bg-slate-700"}`} />
+            <div key={step} className={`flex-1 h-1.5 rounded-full ${step <= 4 ? "bg-orange-500" : "bg-slate-100"}`} />
           ))}
         </div>
 
-        <div className="bg-slate-800 rounded-3xl p-8 shadow-2xl border border-slate-700 max-h-[85vh] overflow-y-auto">
-          <button onClick={() => navigate("/user/health")} className="text-slate-400 hover:text-white text-sm mb-4 flex items-center gap-1">
+        <div className="bg-white rounded-3xl p-8 shadow-2xl border border-slate-200 max-h-[85vh] overflow-y-auto">
+          <button onClick={() => navigate("/user/health")} className="text-slate-500 hover:text-slate-900 text-sm mb-4 flex items-center gap-1">
             ← Back
           </button>
 
-          <h2 className="text-2xl font-bold text-white mb-1">Workout Availability</h2>
-          <p className="text-slate-400 text-sm mb-6">When are you available to work out?</p>
+          <h2 className="text-2xl font-bold text-slate-900 mb-1">Workout Availability</h2>
+          <p className="text-slate-500 text-sm mb-6">When are you available to work out?</p>
 
           {/* Days Per Week — single select */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-300 mb-3">Days Per Week</label>
+            <label className="block text-sm font-medium text-slate-600 mb-3">Days Per Week</label>
             <div className="flex flex-wrap gap-2">
               {daysPerWeekOptions.map((d) => (
                 <Chip key={d} label={`${d} day${d !== "1" ? "s" : ""}`} selected={daysPerWeek === d}
@@ -98,7 +98,7 @@ export default function Availability() {
 
           {/* Workout Duration — single select */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-300 mb-3">Workout Duration</label>
+            <label className="block text-sm font-medium text-slate-600 mb-3">Workout Duration</label>
             <div className="flex flex-wrap gap-2">
               {durationOptions.map((d) => (
                 <Chip key={d} label={d} selected={duration === d}
@@ -110,7 +110,7 @@ export default function Availability() {
           {/* Preferred Days — pick exactly as many as Days Per Week */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-slate-300">Preferred Days</label>
+              <label className="text-sm font-medium text-slate-600">Preferred Days</label>
               <span className="text-xs text-slate-500">{days.length}/{daysPerWeek} selected</span>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -128,7 +128,7 @@ export default function Availability() {
 
           <button
             onClick={handleContinue}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition"
           >
             Continue to Coach Selection →
           </button>

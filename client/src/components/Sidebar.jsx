@@ -1,6 +1,6 @@
 import {
-  Home, Users, Dumbbell, Salad, BarChart3,
-  Settings, LogOut, Bell, UserCheck, ClipboardList,
+  Home, Users, BarChart3,
+  Settings, LogOut, Bell, UserCheck,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -10,9 +10,6 @@ const navItems = [
   { to: "/admin/dashboard", icon: <Home size={20} />, label: "Dashboard" },
   { to: "/admin/members", icon: <Users size={20} />, label: "Members" },
   { to: "/admin/trainers", icon: <UserCheck size={20} />, label: "Trainers" },
-  { to: "/admin/workouts", icon: <Dumbbell size={20} />, label: "Exercises" },
-  { to: "/admin/workout-plans", icon: <ClipboardList size={20} />, label: "Workout Plans" },
-  { to: "/admin/nutrition", icon: <Salad size={20} />, label: "Meal Plans" },
   { to: "/admin/analytics", icon: <BarChart3 size={20} />, label: "Analytics" },
   { to: "/admin/notifications", icon: <Bell size={20} />, label: "Notifications" },
   { to: "/admin/settings", icon: <Settings size={20} />, label: "Settings" },
@@ -36,7 +33,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-slate-900 text-white flex flex-col h-screen sticky top-0">
+    <aside className="w-64 bg-black text-white flex flex-col h-screen sticky top-0">
       <div className="p-6 border-b border-slate-700">
         <h1 className="text-3xl font-bold text-blue-400">AveFit</h1>
         <p className="text-slate-400 text-sm">Admin Panel</p>

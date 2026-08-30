@@ -5,7 +5,7 @@ const bcrypt = require("bcrypt");
 const getProfile = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT admin_id, full_name, email, role, created_at FROM admins WHERE admin_id = $1",
+      "SELECT admin_id, full_name, email, role, photo_url, created_at FROM admins WHERE admin_id = $1",
       [req.admin.admin_id]
     );
     if (result.rows.length === 0)
@@ -28,6 +28,24 @@ const updateProfile = async (req, res) => {
     res.json({ success: true, message: "Profile updated." });
   } catch (err) {
     console.error("updateProfile error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// PUT update just the profile photo
+const updatePhoto = async (req, res) => {
+  try {
+    const { photo_url } = req.body;
+    if (!photo_url) {
+      return res.status(400).json({ success: false, message: "photo_url is required." });
+    }
+    await pool.query(
+      "UPDATE admins SET photo_url=$1, updated_at=NOW() WHERE admin_id=$2",
+      [photo_url, req.admin.admin_id]
+    );
+    res.json({ success: true, message: "Photo updated." });
+  } catch (err) {
+    console.error("updatePhoto error:", err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 };
@@ -59,4 +77,4 @@ const updatePassword = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, updateProfile, updatePassword };
+module.exports = { getProfile, updateProfile, updatePhoto, updatePassword };

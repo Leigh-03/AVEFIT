@@ -1,21 +1,54 @@
-import { useState, useEffect } from "react";
-import { Save, User, Lock, Bell, Database } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Save, User, Lock, Bell, Database, Camera } from "lucide-react";
 import api from "../services/api";
+import { fileToCompressedDataUrl } from "../utils/imageUpload";
 
 export default function Settings() {
+  const fileInputRef = useRef(null);
   const [profile, setProfile] = useState({ full_name: "", email: "" });
+  const [photo, setPhoto] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoMsg, setPhotoMsg] = useState("");
   const [passwords, setPasswords] = useState({ current_password: "", new_password: "", confirm: "" });
   const [notifications, setNotifications] = useState({
     newMember: true, workoutCompleted: false, bmiAlert: true, weeklyReport: true,
   });
   const [status, setStatus] = useState({ profile: "", password: "" });
   const [loading, setLoading] = useState({ profile: false, password: false });
+  const [fetchError, setFetchError] = useState("");
 
   useEffect(() => {
     api.get("/settings/profile")
-      .then((res) => setProfile({ full_name: res.data.data.full_name, email: res.data.data.email }))
-      .catch((err) => console.error(err));
+      .then((res) => {
+        setProfile({ full_name: res.data.data.full_name, email: res.data.data.email });
+        setPhoto(res.data.data.photo_url || null);
+      })
+      .catch((err) => {
+        console.error(err);
+        setFetchError(err.response?.data?.message || err.message || "Couldn't load admin profile.");
+      });
   }, []);
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    setPhotoMsg("");
+    try {
+      const dataUrl = await fileToCompressedDataUrl(file);
+      await api.put("/settings/photo", { photo_url: dataUrl });
+      setPhoto(dataUrl);
+      const admin = JSON.parse(localStorage.getItem("avefit_admin") || "{}");
+      localStorage.setItem("avefit_admin", JSON.stringify({ ...admin, photo_url: dataUrl }));
+      setPhotoMsg("Photo updated!");
+    } catch (err) {
+      setPhotoMsg(err.message || "Failed to upload photo.");
+    } finally {
+      setUploadingPhoto(false);
+      setTimeout(() => setPhotoMsg(""), 3000);
+      e.target.value = "";
+    }
+  };
 
   const handleSaveProfile = async () => {
     setLoading((l) => ({ ...l, profile: true }));
@@ -68,6 +101,11 @@ export default function Settings() {
 
   return (
     <div className="space-y-8 max-w-3xl">
+      {fetchError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          ⚠️ {fetchError}
+        </div>
+      )}
       <div>
         <h1 className="text-3xl font-bold text-slate-800">Settings</h1>
         <p className="text-slate-500 mt-1">Manage your account and preferences.</p>
@@ -79,6 +117,36 @@ export default function Settings() {
           <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><User size={20} /></div>
           <h2 className="text-lg font-bold text-slate-800">Profile Information</h2>
         </div>
+
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingPhoto}
+            className="relative w-16 h-16 rounded-full disabled:opacity-70 shrink-0"
+          >
+            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center overflow-hidden">
+              {photo ? (
+                <img src={photo} alt="Admin" className="w-full h-full object-cover" />
+              ) : (
+                <User size={28} className="text-white" />
+              )}
+            </div>
+            <div className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full flex items-center justify-center border-2 border-slate-100 shadow">
+              {uploadingPhoto ? (
+                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Camera size={11} className="text-slate-700" />
+              )}
+            </div>
+          </button>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+          <div>
+            <p className="text-sm font-medium text-slate-700">Profile Photo</p>
+            <p className="text-xs text-slate-400">Click the avatar to upload a new photo.</p>
+            {photoMsg && <p className="text-xs font-medium text-blue-600 mt-1">{photoMsg}</p>}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
             { label: "Full Name", key: "full_name" },

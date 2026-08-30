@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Users, Dumbbell, Apple, Clock } from "lucide-react";
+import { Users, Clock } from "lucide-react";
 import StatCard from "../components/dashboard/StatCard";
 import GrowthChart from "../components/dashboard/GrowthChart";
 import ActivityList from "../components/dashboard/ActivityList";
@@ -8,11 +8,15 @@ import api from "../services/api";
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState("");
 
   useEffect(() => {
     api.get("/analytics/dashboard")
       .then((res) => setStats(res.data.data))
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        setFetchError(err.response?.data?.message || err.message || "Couldn't load dashboard stats.");
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -25,14 +29,20 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {fetchError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          ⚠️ {fetchError}
+        </div>
+      )}
+
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[...Array(2)].map((_, i) => (
             <div key={i} className="bg-white rounded-2xl shadow-md p-6 animate-pulse h-28" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <StatCard
             title="Total Members"
             value={stats?.totalMembers ?? 0}
@@ -46,20 +56,6 @@ export default function Dashboard() {
             icon={<Clock size={30} />}
             color="bg-yellow-500"
             trend="Needs review"
-          />
-          <StatCard
-            title="Exercises"
-            value={stats?.totalExercises ?? 0}
-            icon={<Dumbbell size={30} />}
-            color="bg-green-500"
-            trend="In library"
-          />
-          <StatCard
-            title="Meal Plans"
-            value={stats?.totalMealPlans ?? 0}
-            icon={<Apple size={30} />}
-            color="bg-orange-500"
-            trend="Assigned to members"
           />
         </div>
       )}

@@ -6,9 +6,9 @@ import userApi from "../userApi";
 
 function Row({ label, value }) {
   return (
-    <div className="flex items-center justify-between py-2 border-b border-slate-800 last:border-0">
-      <span className="text-slate-400 text-sm">{label}</span>
-      <span className="text-white text-sm font-medium text-right">{value}</span>
+    <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
+      <span className="text-slate-500 text-sm">{label}</span>
+      <span className="text-slate-900 text-sm font-medium text-right">{value}</span>
     </div>
   );
 }
@@ -93,32 +93,32 @@ export default function SetupConfirmation() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-white via-orange-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Progress */}
         <div className="flex items-center gap-2 mb-8">
           {[1, 2, 3, 4, 5, 6].map((step) => (
-            <div key={step} className="flex-1 h-1.5 rounded-full bg-blue-500" />
+            <div key={step} className="flex-1 h-1.5 rounded-full bg-orange-500" />
           ))}
         </div>
 
-        <div className="bg-slate-800 rounded-3xl p-8 shadow-2xl border border-slate-700 max-h-[85vh] overflow-y-auto">
-          <button onClick={() => navigate("/user/coach")} className="text-slate-400 hover:text-white text-sm mb-4 flex items-center gap-1">
+        <div className="bg-white rounded-3xl p-8 shadow-2xl border border-slate-200 max-h-[85vh] overflow-y-auto">
+          <button onClick={() => navigate("/user/coach")} className="text-slate-500 hover:text-slate-900 text-sm mb-4 flex items-center gap-1">
             ← Back
           </button>
 
-          <h2 className="text-2xl font-bold text-white mb-1">Confirm Your Setup</h2>
-          <p className="text-slate-400 text-sm mb-6">Review everything before we build your dashboard.</p>
+          <h2 className="text-2xl font-bold text-slate-900 mb-1">Confirm Your Setup</h2>
+          <p className="text-slate-500 text-sm mb-6">Review everything before we build your dashboard.</p>
 
           {loading ? (
             <div className="space-y-3 mb-6">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-10 bg-slate-900 rounded-xl animate-pulse" />)}
+              {[...Array(4)].map((_, i) => <div key={i} className="h-10 bg-slate-50 rounded-xl animate-pulse" />)}
             </div>
           ) : (
             <>
               {/* Body Assessment */}
-              <div className="bg-slate-900 rounded-2xl p-4 mb-4">
-                <h3 className="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
+              <div className="bg-slate-50 rounded-2xl p-4 mb-4">
+                <h3 className="text-sm font-semibold text-slate-600 mb-2 flex items-center gap-2">
                   <User size={14} /> Body Assessment
                 </h3>
                 <Row label="Gender" value={profile?.gender || "—"} />
@@ -128,53 +128,53 @@ export default function SetupConfirmation() {
               </div>
 
               {/* Goal */}
-              <div className="bg-slate-900 rounded-2xl p-4 mb-4">
-                <h3 className="text-sm font-semibold text-slate-300 mb-2">Goal</h3>
+              <div className="bg-slate-50 rounded-2xl p-4 mb-4">
+                <h3 className="text-sm font-semibold text-slate-600 mb-2">Goal</h3>
                 <Row label="Fitness Goal" value={goalData.goal || "—"} />
                 <Row label="Target Weight" value={goalData.targetWeight ? `${goalData.targetWeight} kg` : "—"} />
               </div>
 
               {/* Health */}
-              <div className="bg-slate-900 rounded-2xl p-4 mb-4">
-                <h3 className="text-sm font-semibold text-slate-300 mb-2">Health &amp; Experience</h3>
+              <div className="bg-slate-50 rounded-2xl p-4 mb-4">
+                <h3 className="text-sm font-semibold text-slate-600 mb-2">Health &amp; Experience</h3>
                 <Row label="Experience Level" value={healthData.experience || "—"} />
                 <Row label="Injuries" value={(healthData.injuries || []).join(", ") || "None"} />
                 <Row label="Health Conditions" value={(healthData.healthConditions || []).join(", ") || "None"} />
               </div>
 
               {/* Availability */}
-              <div className="bg-slate-900 rounded-2xl p-4 mb-4">
-                <h3 className="text-sm font-semibold text-slate-300 mb-2">Availability</h3>
+              <div className="bg-slate-50 rounded-2xl p-4 mb-4">
+                <h3 className="text-sm font-semibold text-slate-600 mb-2">Availability</h3>
                 <Row label="Days Per Week" value={availability.daysPerWeek || "—"} />
                 <Row label="Session Duration" value={availability.duration || "—"} />
                 <Row label="Workout Days" value={(availability.days || []).join(", ") || "—"} />
               </div>
 
               {/* Coach */}
-              <div className="bg-slate-900 rounded-2xl p-4 mb-4">
-                <h3 className="text-sm font-semibold text-slate-300 mb-2">Coach</h3>
+              <div className="bg-slate-50 rounded-2xl p-4 mb-4">
+                <h3 className="text-sm font-semibold text-slate-600 mb-2">Coach</h3>
                 <Row label="Assigned Coach" value={trainer?.full_name || "Not selected"} />
               </div>
 
               {/* Predictive Analytics */}
               {prediction && (
-                <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 mb-4">
-                  <h3 className="text-sm font-semibold text-blue-300 mb-3 flex items-center gap-2">
+                <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-4 mb-4">
+                  <h3 className="text-sm font-semibold text-orange-500 mb-3 flex items-center gap-2">
                     <TrendingUp size={14} /> Predicted Timeline
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-900/60 rounded-xl p-3 text-center">
+                    <div className="bg-slate-50 rounded-xl p-3 text-center">
                       <p className="text-2xl font-bold text-green-400">{prediction.weeks_needed_consistent}w</p>
-                      <p className="text-xs text-slate-400 mt-1">If consistent</p>
+                      <p className="text-xs text-slate-500 mt-1">If consistent</p>
                       <p className="text-[11px] text-slate-500">(~{prediction.months_needed_consistent} mo)</p>
                     </div>
-                    <div className="bg-slate-900/60 rounded-xl p-3 text-center">
+                    <div className="bg-slate-50 rounded-xl p-3 text-center">
                       <p className="text-2xl font-bold text-yellow-400">{prediction.weeks_needed_inconsistent}w</p>
-                      <p className="text-xs text-slate-400 mt-1">If inconsistent</p>
+                      <p className="text-xs text-slate-500 mt-1">If inconsistent</p>
                       <p className="text-[11px] text-slate-500">(~{prediction.months_needed_inconsistent} mo)</p>
                     </div>
                   </div>
-                  {prediction.note && <p className="text-xs text-slate-400 mt-3">{prediction.note}</p>}
+                  {prediction.note && <p className="text-xs text-slate-500 mt-3">{prediction.note}</p>}
                 </div>
               )}
             </>
@@ -185,7 +185,7 @@ export default function SetupConfirmation() {
           <button
             onClick={handleConfirm}
             disabled={saving || loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2"
+            className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2"
           >
             <CheckCircle2 size={18} />
             {saving ? "Setting up your dashboard..." : "Confirm & Go to Dashboard"}

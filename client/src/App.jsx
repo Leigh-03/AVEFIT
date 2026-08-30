@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { UserAuthProvider } from "./context/UserAuthContext";
+import { TrainerAuthProvider } from "./context/TrainerAuthContext";
 
 // Admin
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -30,6 +31,12 @@ import ExerciseLibrary from "./pages/ExerciseLibrary";
 import AboutUs from "./pages/AboutUs";
 import ProfilePage from "./pages/ProfilePage";
 
+// Trainer Portal
+import TrainerLogin from "./pages/TrainerLogin";
+import TrainerLayout from "./pages/TrainerLayout";
+import TrainerDashboard from "./pages/TrainerDashboard";
+import TrainerProfile from "./pages/TrainerProfile";
+
 function AdminProtectedRoute({ children }) {
   const token = localStorage.getItem("avefit_token");
   if (!token) return <Navigate to="/login" replace />;
@@ -52,9 +59,16 @@ function DashboardProtectedRoute({ children }) {
   return children;
 }
 
+function TrainerProtectedRoute({ children }) {
+  const token = localStorage.getItem("avefit_trainer_token");
+  if (!token) return <Navigate to="/trainer/login" replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <UserAuthProvider>
+    <TrainerAuthProvider>
       <Routes>
         {/* Public homepage */}
         <Route path="/" element={<Homepage />} />
@@ -80,6 +94,23 @@ export default function App() {
                 </Routes>
               </DashboardLayout>
             </AdminProtectedRoute>
+          }
+        />
+
+        {/* Trainer Portal */}
+        <Route path="/trainer/login" element={<TrainerLogin />} />
+        <Route
+          path="/trainer/*"
+          element={
+            <TrainerProtectedRoute>
+              <TrainerLayout>
+                <Routes>
+                  <Route path="/roster" element={<TrainerDashboard />} />
+                  <Route path="/profile" element={<TrainerProfile />} />
+                  <Route path="*" element={<Navigate to="/trainer/roster" replace />} />
+                </Routes>
+              </TrainerLayout>
+            </TrainerProtectedRoute>
           }
         />
 
@@ -114,6 +145,7 @@ export default function App() {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+    </TrainerAuthProvider>
     </UserAuthProvider>
   );
 }

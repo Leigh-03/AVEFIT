@@ -23,11 +23,15 @@ const chartOptions = {
 export default function Analytics() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState("");
 
   useEffect(() => {
     api.get("/analytics")
       .then((res) => setData(res.data.data))
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        setFetchError(err.response?.data?.message || err.message || "Couldn't load analytics.");
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -35,6 +39,11 @@ export default function Analytics() {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-slate-800">Analytics</h1>
+        {fetchError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+            ⚠️ {fetchError}
+          </div>
+        )}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="bg-white rounded-2xl shadow-md h-24 animate-pulse" />
@@ -66,9 +75,9 @@ export default function Analytics() {
   };
 
   const attendanceChart = {
-    labels: data?.attendance.map((a) => a.month) || [],
+    labels: data?.attendance.map((a) => a.day) || [],
     datasets: [{
-      label: "Attendance",
+      label: "Completed Sessions",
       data: data?.attendance.map((a) => parseInt(a.count)) || [],
       backgroundColor: "#10b981", borderRadius: 6,
     }],
@@ -79,6 +88,11 @@ export default function Analytics() {
 
   return (
     <div className="space-y-8">
+      {fetchError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          ⚠️ {fetchError}
+        </div>
+      )}
       <div>
         <h1 className="text-3xl font-bold text-slate-800">Analytics</h1>
         <p className="text-slate-500 mt-1">Live data from your PostgreSQL database.</p>
@@ -120,10 +134,10 @@ export default function Analytics() {
 
       {/* Charts Row 2 */}
       <div className="bg-white rounded-2xl shadow-md p-6">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Monthly Attendance</h3>
+        <h3 className="text-lg font-bold text-slate-800 mb-4">Completed Sessions by Day of Week</h3>
         {attendanceChart.labels.length > 0
           ? <Bar data={attendanceChart} options={chartOptions} />
-          : <p className="text-slate-400 text-sm text-center py-12">No attendance data yet.</p>}
+          : <p className="text-slate-400 text-sm text-center py-12">No completed sessions yet.</p>}
       </div>
 
       {/* BMI Distribution */}

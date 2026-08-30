@@ -14,12 +14,17 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All");
+  const [fetchError, setFetchError] = useState("");
 
   const fetchNotifications = () => {
     setLoading(true);
+    setFetchError("");
     api.get("/notifications")
       .then((res) => setNotifications(res.data.data))
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        setFetchError(err.response?.data?.message || err.message || "Couldn't load notifications.");
+      })
       .finally(() => setLoading(false));
   };
 
@@ -52,6 +57,11 @@ export default function Notifications() {
 
   return (
     <div className="space-y-6">
+      {fetchError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          ⚠️ {fetchError}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Notifications</h1>

@@ -78,6 +78,24 @@ const login = async (req, res) => {
   }
 };
 
+// PUT update just the profile photo
+const updatePhoto = async (req, res) => {
+  try {
+    const { profile_image } = req.body;
+    if (!profile_image) {
+      return res.status(400).json({ success: false, message: "profile_image is required." });
+    }
+    await pool.query(
+      "UPDATE users SET profile_image=$1, updated_at=NOW() WHERE user_id=$2",
+      [profile_image, req.user.user_id]
+    );
+    res.json({ success: true, message: "Photo updated." });
+  } catch (err) {
+    console.error("updatePhoto error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // GET profile
 const getProfile = async (req, res) => {
   try {
@@ -103,6 +121,7 @@ const updateProfile = async (req, res) => {
   try {
     const {
       first_name, last_name, email, gender, birth_date, age, height, weight, fitness_goal, activity_level, phone,
+      profile_image,
       target_weight, workout_days_per_week, workout_duration, preferred_days,
       intensity, injuries, health_conditions, trainer_id, setup_completed,
     } = req.body;
@@ -127,8 +146,9 @@ const updateProfile = async (req, res) => {
         health_conditions=COALESCE($18, health_conditions),
         trainer_id=COALESCE($19, trainer_id),
         setup_completed=COALESCE($20, setup_completed),
+        profile_image=COALESCE($21, profile_image),
         updated_at=NOW()
-      WHERE user_id=$21
+      WHERE user_id=$22
     `, [
       first_name, last_name, email, gender, birth_date || null, height || null, weight || null, fitness_goal, activity_level, phone,
       age ?? null,
@@ -141,6 +161,7 @@ const updateProfile = async (req, res) => {
       health_conditions ?? null,
       trainer_id ?? null,
       typeof setup_completed === "boolean" ? setup_completed : null,
+      profile_image ?? null,
       req.user.user_id,
     ]);
 
@@ -159,4 +180,4 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getProfile, updateProfile };
+module.exports = { register, login, getProfile, updateProfile, updatePhoto };

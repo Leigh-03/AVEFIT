@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { UserCheck, Plus, Search, Edit2, XCircle, Users, ChevronDown, ChevronUp, Dumbbell, Trash2, X } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { UserCheck, Plus, Search, Edit2, XCircle, Users, ChevronDown, ChevronUp, Dumbbell, Trash2, X, Camera } from "lucide-react";
 import api from "../services/api";
+import { fileToCompressedDataUrl } from "../utils/imageUpload";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -10,11 +11,31 @@ const statusColors = {
 };
 
 function TrainerModal({ trainer, onClose, onSave }) {
+  const fileInputRef = useRef(null);
   const [form, setForm] = useState(
-    trainer || { full_name: "", email: "", phone: "", specialization: "" }
+    trainer || { full_name: "", email: "", phone: "", specialization: "", goal_specialty: "" }
   );
+  const [photo, setPhoto] = useState(trainer?.photo_url || null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    setError("");
+    try {
+      const dataUrl = await fileToCompressedDataUrl(file);
+      setPhoto(dataUrl);
+    } catch (err) {
+      setError(err.message || "Failed to read photo.");
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = "";
+    }
+  };
 
   const handleSubmit = async () => {
     if (!form.full_name || !form.email) {
@@ -23,10 +44,11 @@ function TrainerModal({ trainer, onClose, onSave }) {
     }
     setSaving(true);
     try {
+      const payload = { ...form, photo_url: photo, ...(password ? { password } : {}) };
       if (trainer) {
-        await api.put(`/trainers/${trainer.trainer_id}`, { ...form, status: trainer.status });
+        await api.put(`/trainers/${trainer.trainer_id}`, { ...payload, status: trainer.status });
       } else {
-        await api.post("/trainers", form);
+        await api.post("/trainers", payload);
       }
       onSave();
       onClose();
@@ -39,13 +61,41 @@ function TrainerModal({ trainer, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b">
           <h2 className="text-xl font-bold text-slate-800">
             {trainer ? "Edit Trainer" : "Add New Trainer"}
           </h2>
         </div>
         <div className="p-6 space-y-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingPhoto}
+              className="relative w-16 h-16 rounded-full disabled:opacity-70 shrink-0"
+            >
+              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center overflow-hidden">
+                {photo ? (
+                  <img src={photo} alt="Trainer" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-white text-xl font-bold">{form.full_name?.charAt(0) || "?"}</span>
+                )}
+              </div>
+              <div className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full flex items-center justify-center border-2 border-slate-100 shadow">
+                {uploadingPhoto ? (
+                  <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Camera size={11} className="text-slate-700" />
+                )}
+              </div>
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+            <div>
+              <p className="text-sm font-medium text-slate-700">Profile Photo</p>
+              <p className="text-xs text-slate-400">Shown to members on the Coach Selection screen.</p>
+            </div>
+          </div>
+
           {[
             { label: "Full Name *", key: "full_name", type: "text" },
             { label: "Email *", key: "email", type: "email" },
@@ -62,6 +112,45 @@ function TrainerModal({ trainer, onClose, onSave }) {
               />
             </div>
           ))}
+
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-1">Recommended For (goal match)</label>
+            <select
+              value={form.goal_specialty || ""}
+              onChange={(e) => setForm({ ...form, goal_specialty: e.target.value })}
+              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">No specific match</option>
+              <option value="Weight Loss">Weight Loss</option>
+              <option value="Muscle Gain">Muscle Gain</option>
+              <option value="Maintain Weight">Maintain Weight</option>
+              <option value="General Fitness">General Fitness</option>
+            </select>
+            <p className="text-xs text-slate-400 mt-1">
+              Members with this goal will see this coach highlighted as "Recommended".
+            </p>
+          </div>
+
+          <div className="pt-2 border-t">
+            <label className="block text-sm font-medium text-slate-600 mb-1">
+              Coach Portal Password {trainer && (
+                <span className={`ml-1 text-xs font-normal ${trainer.has_portal_access ? "text-green-600" : "text-slate-400"}`}>
+                  ({trainer.has_portal_access ? "portal access enabled" : "no portal access yet"})
+                </span>
+              )}
+            </label>
+            <input
+              type="text"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={trainer ? "Leave blank to keep current password" : "Set a login password"}
+              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-slate-400 mt-1">
+              Lets this coach log in at <code>/trainer/login</code> to view their roster and assign workouts.
+            </p>
+          </div>
+
           {error && <p className="text-red-500 text-sm">{error}</p>}
         </div>
         <div className="p-6 border-t flex gap-3 justify-end">
@@ -268,6 +357,7 @@ function RosterModal({ trainer, onClose }) {
 export default function Trainers() {
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState("");
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editTrainer, setEditTrainer] = useState(null);
@@ -275,9 +365,13 @@ export default function Trainers() {
 
   const fetchTrainers = () => {
     setLoading(true);
+    setFetchError("");
     api.get("/trainers")
       .then((res) => setTrainers(res.data.data))
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        setFetchError(err.response?.data?.message || err.message || "Couldn't load trainers.");
+      })
       .finally(() => setLoading(false));
   };
 
@@ -335,6 +429,12 @@ export default function Trainers() {
           Add Trainer
         </button>
       </div>
+
+      {fetchError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          ⚠️ {fetchError}
+        </div>
+      )}
 
       {/* Search */}
       <div className="bg-white rounded-2xl shadow-md p-4">

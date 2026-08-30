@@ -24,3 +24,17 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* Inputs/selects/textareas default to dark, readable text even though the
+   global body color above is white — light-themed cards (white background)
+   rely on this so typed text is never invisible. Wrapped in @layer base so
+   it participates in Tailwind's cascade layers — otherwise, as a plain
+   unlayered rule, it would beat every text-* utility (like text-white on
+   dark cards) no matter how specific, making typed text invisible there. */
+@layer base {
+  input,
+  select,
+  textarea {
+    color: #0f172a;
+  }
+}

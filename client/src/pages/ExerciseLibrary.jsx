@@ -5,13 +5,13 @@ import userApi from "../userApi";
 function ExerciseDetail({ exercise, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/70 flex items-end justify-center z-50">
-      <div className="bg-slate-800 rounded-t-3xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto">
+      <div className="bg-white rounded-t-3xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-xl font-bold text-white">{exercise.exercise_name}</h3>
-            <p className="text-slate-400 text-sm">{exercise.muscle_group}</p>
+            <h3 className="text-xl font-bold text-slate-900">{exercise.exercise_name}</h3>
+            <p className="text-slate-500 text-sm">{exercise.muscle_group}</p>
           </div>
-          <button onClick={onClose}><X size={22} className="text-slate-400" /></button>
+          <button onClick={onClose}><X size={22} className="text-slate-500" /></button>
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-4">
@@ -20,8 +20,8 @@ function ExerciseDetail({ exercise, onClose }) {
             { label: "Equipment", value: exercise.equipment || "None" },
             { label: "Cal/min", value: exercise.calories_per_minute ? `${exercise.calories_per_minute} kcal` : "—" },
           ].map((item) => (
-            <div key={item.label} className="bg-slate-900 rounded-xl p-3 text-center">
-              <p className="text-white font-semibold text-sm">{item.value}</p>
+            <div key={item.label} className="bg-slate-50 rounded-xl p-3 text-center">
+              <p className="text-slate-900 font-semibold text-sm">{item.value}</p>
               <p className="text-slate-500 text-xs mt-0.5">{item.label}</p>
             </div>
           ))}
@@ -29,14 +29,14 @@ function ExerciseDetail({ exercise, onClose }) {
 
         {exercise.description && (
           <div className="mb-4">
-            <h4 className="text-sm font-semibold text-slate-300 mb-2">Description</h4>
-            <p className="text-slate-400 text-sm leading-relaxed">{exercise.description}</p>
+            <h4 className="text-sm font-semibold text-slate-600 mb-2">Description</h4>
+            <p className="text-slate-500 text-sm leading-relaxed">{exercise.description}</p>
           </div>
         )}
 
         {exercise.video_url && (
           <a href={exercise.video_url} target="_blank" rel="noopener noreferrer"
-            className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition text-sm">
+            className="block w-full text-center bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition text-sm">
             Watch Tutorial ▶
           </a>
         )}
@@ -83,28 +83,28 @@ export default function ExerciseLibrary() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-24">
+    <div className="min-h-screen bg-white text-slate-900 pb-24">
       {selected && <ExerciseDetail exercise={selected} onClose={() => setSelected(null)} />}
 
       {/* Header */}
-      <div className="bg-gradient-to-b from-purple-900/40 to-slate-950 px-6 pt-12 pb-6">
-        <h1 className="text-2xl font-bold">Exercise Library</h1>
+      <div className="bg-black px-6 pt-12 pb-6">
+        <h1 className="text-2xl font-bold text-white">Exercise Library</h1>
         <p className="text-slate-400 text-sm mt-1">{exercises.length} exercises available</p>
       </div>
 
       <div className="px-6 space-y-4">
         {/* Search */}
-        <div className="flex items-center bg-slate-800 rounded-xl px-4 py-3 gap-3">
+        <div className="flex items-center bg-white rounded-xl px-4 py-3 gap-3">
           <Search size={18} className="text-slate-500" />
           <input type="text" placeholder="Search exercises..." value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="bg-transparent outline-none text-white placeholder-slate-500 flex-1 text-sm" />
+            className="bg-transparent outline-none text-slate-900 placeholder-slate-400 flex-1 text-sm" />
           {search && <button onClick={() => setSearch("")}><X size={16} className="text-slate-500" /></button>}
         </div>
 
         {/* Filter Toggle */}
         <button onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition">
+          className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition">
           <ChevronDown size={16} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
           Filters {filterCategory !== "All" || filterDifficulty !== "All" ? "•" : ""}
         </button>
@@ -112,12 +112,12 @@ export default function ExerciseLibrary() {
         {showFilters && (
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-slate-400 mb-2 block">Category</label>
+              <label className="text-xs text-slate-500 mb-2 block">Category</label>
               <div className="flex flex-wrap gap-2">
                 {["All", ...categories.map((c) => c.category_name)].map((c) => (
                   <button key={c} onClick={() => setFilterCategory(c)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                      filterCategory === c ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400"
+                      filterCategory === c ? "bg-orange-500 text-white" : "bg-white text-slate-500"
                     }`}>
                     {c}
                   </button>
@@ -125,12 +125,12 @@ export default function ExerciseLibrary() {
               </div>
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-2 block">Difficulty</label>
+              <label className="text-xs text-slate-500 mb-2 block">Difficulty</label>
               <div className="flex gap-2">
                 {["All", "Beginner", "Intermediate", "Advanced"].map((d) => (
                   <button key={d} onClick={() => setFilterDifficulty(d)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                      filterDifficulty === d ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400"
+                      filterDifficulty === d ? "bg-orange-500 text-white" : "bg-white text-slate-500"
                     }`}>
                     {d}
                   </button>
@@ -145,7 +145,7 @@ export default function ExerciseLibrary() {
         {/* Exercise Cards */}
         {loading ? (
           <div className="space-y-3">
-            {[...Array(6)].map((_, i) => <div key={i} className="h-20 bg-slate-800 rounded-2xl animate-pulse" />)}
+            {[...Array(6)].map((_, i) => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse" />)}
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 text-slate-500">No exercises found.</div>
@@ -153,14 +153,14 @@ export default function ExerciseLibrary() {
           <div className="space-y-3">
             {filtered.map((exercise) => (
               <button key={exercise.exercise_id} onClick={() => setSelected(exercise)}
-                className="w-full bg-slate-800 hover:bg-slate-700 rounded-2xl p-4 text-left transition border border-slate-700 hover:border-blue-500/50">
+                className="w-full bg-white hover:bg-slate-100 rounded-2xl p-4 text-left transition border border-slate-200 hover:border-orange-500/50">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <p className="font-semibold text-white">{exercise.exercise_name}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{exercise.muscle_group} • {exercise.category_name || "General"}</p>
+                    <p className="font-semibold text-slate-900">{exercise.exercise_name}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{exercise.muscle_group} • {exercise.category_name || "General"}</p>
                     {exercise.equipment && <p className="text-xs text-slate-500 mt-1">🏋️ {exercise.equipment}</p>}
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-lg font-medium ${difficultyColors[exercise.difficulty] || "bg-slate-700 text-slate-400"}`}>
+                  <span className={`text-xs px-2 py-1 rounded-lg font-medium ${difficultyColors[exercise.difficulty] || "bg-slate-100 text-slate-500"}`}>
                     {exercise.difficulty || "N/A"}
                   </span>
                 </div>
