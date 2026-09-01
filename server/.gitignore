@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Environment variables (DB credentials, JWT secret) — never commit this
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

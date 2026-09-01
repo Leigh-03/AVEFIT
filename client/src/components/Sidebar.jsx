@@ -1,6 +1,6 @@
 import {
   Home, Users, BarChart3,
-  Settings, LogOut, Bell, UserCheck,
+  Settings, LogOut, Bell, UserCheck, Dumbbell, ClipboardList,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -10,6 +10,8 @@ const navItems = [
   { to: "/admin/dashboard", icon: <Home size={20} />, label: "Dashboard" },
   { to: "/admin/members", icon: <Users size={20} />, label: "Members" },
   { to: "/admin/trainers", icon: <UserCheck size={20} />, label: "Trainers" },
+  { to: "/admin/workouts", icon: <Dumbbell size={20} />, label: "Exercises" },
+  { to: "/admin/workout-plans", icon: <ClipboardList size={20} />, label: "Workout Plans" },
   { to: "/admin/analytics", icon: <BarChart3 size={20} />, label: "Analytics" },
   { to: "/admin/notifications", icon: <Bell size={20} />, label: "Notifications" },
   { to: "/admin/settings", icon: <Settings size={20} />, label: "Settings" },

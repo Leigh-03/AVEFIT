@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Search, X, ChevronDown } from "lucide-react";
+import { Search, X, ChevronDown, ListOrdered, PlayCircle } from "lucide-react";
 import userApi from "../userApi";
 
 function ExerciseDetail({ exercise, onClose }) {
+  const steps = Array.isArray(exercise.movement_steps) ? exercise.movement_steps : null;
+
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-end justify-center z-50">
-      <div className="bg-white rounded-t-3xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl w-full max-w-lg p-6 max-h-[85vh] overflow-y-auto">
         <div className="flex items-start justify-between mb-4">
           <div>
             <h3 className="text-xl font-bold text-slate-900">{exercise.exercise_name}</h3>
@@ -34,10 +36,39 @@ function ExerciseDetail({ exercise, onClose }) {
           </div>
         )}
 
+        {/* Movement Tutorial — 3 steps */}
+        <div className="mb-4">
+          <h4 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+            <ListOrdered size={15} className="text-orange-500" /> Movement Tutorial
+          </h4>
+          {steps ? (
+            <div className="space-y-3">
+              {steps.map((step, i) => (
+                <div key={i} className="flex gap-3">
+                  <div className="flex flex-col items-center shrink-0">
+                    <span className="w-7 h-7 rounded-full bg-orange-500 text-white text-sm font-bold flex items-center justify-center">
+                      {i + 1}
+                    </span>
+                    {i < steps.length - 1 && <div className="w-0.5 flex-1 bg-orange-200 mt-1" />}
+                  </div>
+                  <div className="pb-3">
+                    <p className="font-semibold text-slate-900 text-sm">{step.title}</p>
+                    <p className="text-slate-500 text-sm mt-0.5 leading-relaxed">{step.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-400 text-sm bg-slate-50 rounded-xl p-4 text-center">
+              No movement tutorial yet for this exercise — check back soon!
+            </p>
+          )}
+        </div>
+
         {exercise.video_url && (
           <a href={exercise.video_url} target="_blank" rel="noopener noreferrer"
-            className="block w-full text-center bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition text-sm">
-            Watch Tutorial ▶
+            className="flex items-center justify-center gap-2 w-full text-center bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition text-sm">
+            <PlayCircle size={18} /> Watch Video Tutorial
           </a>
         )}
       </div>
@@ -64,7 +95,7 @@ export default function ExerciseLibrary() {
   useEffect(() => {
     Promise.all([
       userApi.get("/exercises"),
-      userApi.get("/exercise-categories"),
+      userApi.get("/exercises/categories"),
     ])
       .then(([exRes, catRes]) => {
         setExercises(exRes.data.data || []);
@@ -159,6 +190,18 @@ export default function ExerciseLibrary() {
                     <p className="font-semibold text-slate-900">{exercise.exercise_name}</p>
                     <p className="text-xs text-slate-500 mt-0.5">{exercise.muscle_group} • {exercise.category_name || "General"}</p>
                     {exercise.equipment && <p className="text-xs text-slate-500 mt-1">🏋️ {exercise.equipment}</p>}
+                    <div className="flex items-center gap-3 mt-1">
+                      {exercise.movement_steps && (
+                        <p className="text-xs text-orange-500 flex items-center gap-1">
+                          <ListOrdered size={11} /> Tutorial
+                        </p>
+                      )}
+                      {exercise.video_url && (
+                        <p className="text-xs text-orange-500 flex items-center gap-1">
+                          <PlayCircle size={11} /> Video
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-lg font-medium ${difficultyColors[exercise.difficulty] || "bg-slate-100 text-slate-500"}`}>
                     {exercise.difficulty || "N/A"}
