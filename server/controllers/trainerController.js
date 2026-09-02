@@ -2,11 +2,29 @@ const pool = require("../db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
+const ALLOWED_SPECIALIZATIONS = [
+  "High-Intensity Interval Training (HIIT)",
+  "Circuit Training",
+  "Olympic Weightlifting",
+  "Powerlifting",
+  "Calisthenics & Bodyweight",
+  "Kettlebell Training",
+  "Functional Fitness",
+  "CrossFit Coaching",
+  "Bodybuilding & Physique",
+  "Weight Loss & Management",
+  "Group Fitness",
+];
+
+const sanitizeSpecializations = (values) => Array.from(new Set(
+  (Array.isArray(values) ? values : []).filter((value) => ALLOWED_SPECIALIZATIONS.includes(value))
+));
+
 // GET all trainers
 const getTrainers = async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT trainer_id, full_name, email, phone, specialization, goal_specialty, photo_url, bio, status, created_at, updated_at,
+      `SELECT trainer_id, full_name, email, phone, specializations, goal_specialty, photo_url, bio, status, created_at, updated_at,
               (password IS NOT NULL) AS has_portal_access
        FROM trainers ORDER BY created_at DESC`
     );
@@ -22,7 +40,7 @@ const getTrainerById = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
-      `SELECT trainer_id, full_name, email, phone, specialization, goal_specialty, photo_url, bio, status, created_at, updated_at,
+      `SELECT trainer_id, full_name, email, phone, specializations, goal_specialty, photo_url, bio, status, created_at, updated_at,
               (password IS NOT NULL) AS has_portal_access
        FROM trainers WHERE trainer_id = $1`,
       [id]
@@ -39,13 +57,13 @@ const getTrainerById = async (req, res) => {
 // POST create trainer (admin) — optionally sets a portal login password
 const createTrainer = async (req, res) => {
   try {
-    const { full_name, email, phone, specialization, password, photo_url, goal_specialty, bio } = req.body;
+    const { full_name, email, phone, specializations, password, photo_url, goal_specialty, bio } = req.body;
     const hashed = password ? await bcrypt.hash(password, 10) : null;
     const result = await pool.query(`
-      INSERT INTO trainers (full_name, email, phone, specialization, password, photo_url, goal_specialty, bio)
+      INSERT INTO trainers (full_name, email, phone, specializations, password, photo_url, goal_specialty, bio)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING trainer_id, full_name, email, phone, specialization, photo_url, goal_specialty, bio, status, created_at
-    `, [full_name, email, phone, specialization, hashed, photo_url || null, goal_specialty || null, bio || null]);
+      RETURNING trainer_id, full_name, email, phone, specializations, photo_url, goal_specialty, bio, status, created_at
+    `, [full_name, email, phone, sanitizeSpecializations(specializations), hashed, photo_url || null, goal_specialty || null, bio || null]);
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (err) {
     console.error("createTrainer error:", err.message);
@@ -57,25 +75,25 @@ const createTrainer = async (req, res) => {
 const updateTrainer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { full_name, email, phone, specialization, status, password, photo_url, goal_specialty, bio } = req.body;
+    const { full_name, email, phone, specializations, status, password, photo_url, goal_specialty, bio } = req.body;
 
     if (password) {
       const hashed = await bcrypt.hash(password, 10);
       await pool.query(`
         UPDATE trainers
-        SET full_name=$1, email=$2, phone=$3, specialization=$4, status=$5, password=$6,
+        SET full_name=$1, email=$2, phone=$3, specializations=$4, status=$5, password=$6,
             photo_url=COALESCE($7, photo_url), goal_specialty=COALESCE($8, goal_specialty), bio=COALESCE($9, bio),
             updated_at=NOW()
         WHERE trainer_id=$10
-      `, [full_name, email, phone, specialization, status, hashed, photo_url || null, goal_specialty || null, bio || null, id]);
+      `, [full_name, email, phone, sanitizeSpecializations(specializations), status, hashed, photo_url || null, goal_specialty || null, bio || null, id]);
     } else {
       await pool.query(`
         UPDATE trainers
-        SET full_name=$1, email=$2, phone=$3, specialization=$4, status=$5,
+        SET full_name=$1, email=$2, phone=$3, specializations=$4, status=$5,
             photo_url=COALESCE($6, photo_url), goal_specialty=COALESCE($7, goal_specialty), bio=COALESCE($8, bio),
             updated_at=NOW()
         WHERE trainer_id=$9
-      `, [full_name, email, phone, specialization, status, photo_url || null, goal_specialty || null, bio || null, id]);
+      `, [full_name, email, phone, sanitizeSpecializations(specializations), status, photo_url || null, goal_specialty || null, bio || null, id]);
     }
     res.json({ success: true, message: "Trainer updated." });
   } catch (err) {
@@ -103,7 +121,7 @@ const deactivateTrainer = async (req, res) => {
 const getActiveTrainers = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT trainer_id, full_name, specialization, goal_specialty, photo_url, bio, phone, email
+      SELECT trainer_id, full_name, specializations, goal_specialty, photo_url, bio, phone, email
       FROM trainers
       WHERE status = 'Active' OR status IS NULL
       ORDER BY full_name ASC
@@ -181,7 +199,8 @@ const loginTrainer = async (req, res) => {
         full_name: trainer.full_name,
         email: trainer.email,
         phone: trainer.phone,
-        specialization: trainer.specialization,
+        specializations: trainer.specializations || [],
+        goal_specialty: trainer.goal_specialty,
         photo_url: trainer.photo_url,
       },
     });
@@ -236,7 +255,7 @@ const getExerciseCatalog = async (req, res) => {
 const getMyProfile = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT trainer_id, full_name, email, phone, specialization, goal_specialty, photo_url, bio, status FROM trainers WHERE trainer_id = $1",
+      "SELECT trainer_id, full_name, email, phone, specializations, goal_specialty, photo_url, bio, status FROM trainers WHERE trainer_id = $1",
       [req.trainer.trainer_id]
     );
     if (result.rows.length === 0)

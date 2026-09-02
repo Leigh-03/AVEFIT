@@ -19,7 +19,7 @@ export default function ActivityList({ recentMembers = [] }) {
         <div className="space-y-4">
           {recentMembers.map((member) => (
             <div key={member.member_id} className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-blue-100 text-blue-600 flex-shrink-0">
+              <div className="p-2 rounded-lg bg-orange-100 text-orange-600 flex-shrink-0">
                 <UserPlus size={16} />
               </div>
               <div className="flex-1 min-w-0">

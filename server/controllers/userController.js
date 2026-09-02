@@ -126,6 +126,8 @@ const updateProfile = async (req, res) => {
       intensity, injuries, health_conditions, trainer_id, setup_completed,
     } = req.body;
 
+
+
     // Calculate BMI
     let bmi = null;
     if (height && weight) {

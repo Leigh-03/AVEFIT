@@ -114,7 +114,7 @@ export default function Settings() {
       {/* Profile */}
       <div className="bg-white rounded-2xl shadow-md p-6 space-y-5">
         <div className="flex items-center gap-3 border-b pb-4">
-          <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><User size={20} /></div>
+          <div className="bg-orange-100 p-2 rounded-lg text-orange-600"><User size={20} /></div>
           <h2 className="text-lg font-bold text-slate-800">Profile Information</h2>
         </div>
 
@@ -124,7 +124,7 @@ export default function Settings() {
             disabled={uploadingPhoto}
             className="relative w-16 h-16 rounded-full disabled:opacity-70 shrink-0"
           >
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center overflow-hidden">
+            <div className="w-16 h-16 bg-orange-600 rounded-full flex items-center justify-center overflow-hidden">
               {photo ? (
                 <img src={photo} alt="Admin" className="w-full h-full object-cover" />
               ) : (
@@ -133,7 +133,7 @@ export default function Settings() {
             </div>
             <div className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full flex items-center justify-center border-2 border-slate-100 shadow">
               {uploadingPhoto ? (
-                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <div className="w-3 h-3 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
               ) : (
                 <Camera size={11} className="text-slate-700" />
               )}
@@ -143,7 +143,7 @@ export default function Settings() {
           <div>
             <p className="text-sm font-medium text-slate-700">Profile Photo</p>
             <p className="text-xs text-slate-400">Click the avatar to upload a new photo.</p>
-            {photoMsg && <p className="text-xs font-medium text-blue-600 mt-1">{photoMsg}</p>}
+            {photoMsg && <p className="text-xs font-medium text-orange-600 mt-1">{photoMsg}</p>}
           </div>
         </div>
 
@@ -158,7 +158,7 @@ export default function Settings() {
                 type="text"
                 value={profile[f.key] || ""}
                 onChange={(e) => setProfile({ ...profile, [f.key]: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
           ))}
@@ -170,7 +170,7 @@ export default function Settings() {
             <button
               onClick={handleSaveProfile}
               disabled={loading.profile}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-medium transition text-sm"
+              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-medium transition text-sm"
             >
               <Save size={16} />
               {loading.profile ? "Saving..." : "Save Profile"}
@@ -198,7 +198,7 @@ export default function Settings() {
                 placeholder="••••••••"
                 value={passwords[f.key]}
                 onChange={(e) => setPasswords({ ...passwords, [f.key]: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
           ))}
@@ -242,7 +242,7 @@ export default function Settings() {
               </div>
               <button
                 onClick={() => setNotifications({ ...notifications, [item.key]: !notifications[item.key] })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${notifications[item.key] ? "bg-blue-600" : "bg-slate-200"}`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${notifications[item.key] ? "bg-orange-600" : "bg-slate-200"}`}
               >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${notifications[item.key] ? "translate-x-6" : "translate-x-1"}`} />
               </button>

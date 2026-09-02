@@ -33,12 +33,12 @@ function PlanModal({ members, trainers, onClose, onSave }) {
             <label className="block text-sm font-medium text-slate-600 mb-1">Plan Name *</label>
             <input type="text" value={form.plan_name} onChange={(e) => setForm({ ...form, plan_name: e.target.value })}
               placeholder="e.g. Beginner Strength Program"
-              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-600 mb-1">Goal</label>
             <select value={form.goal} onChange={(e) => setForm({ ...form, goal: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
               <option value="">Select goal...</option>
               {["Weight Loss", "Muscle Gain", "General Fitness", "Endurance", "Flexibility"].map((g) => (
                 <option key={g}>{g}</option>
@@ -48,7 +48,7 @@ function PlanModal({ members, trainers, onClose, onSave }) {
           <div>
             <label className="block text-sm font-medium text-slate-600 mb-1">Assign to Member</label>
             <select value={form.user_id} onChange={(e) => setForm({ ...form, user_id: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
               <option value="">No member (template)</option>
               {members.map((m) => (
                 <option key={m.member_id} value={m.member_id}>{m.full_name}</option>
@@ -58,7 +58,7 @@ function PlanModal({ members, trainers, onClose, onSave }) {
           <div>
             <label className="block text-sm font-medium text-slate-600 mb-1">Assign Trainer</label>
             <select value={form.trainer_id} onChange={(e) => setForm({ ...form, trainer_id: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
               <option value="">No trainer</option>
               {trainers.map((t) => (
                 <option key={t.trainer_id} value={t.trainer_id}>{t.full_name}</option>
@@ -70,7 +70,7 @@ function PlanModal({ members, trainers, onClose, onSave }) {
         <div className="p-6 border-t flex gap-3 justify-end">
           <button onClick={onClose} className="px-5 py-2.5 rounded-xl border text-slate-600 hover:bg-slate-50 text-sm font-medium">Cancel</button>
           <button onClick={handleSubmit} disabled={saving}
-            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50">
+            className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium disabled:opacity-50">
             {saving ? "Creating..." : "Create Plan"}
           </button>
         </div>
@@ -82,7 +82,7 @@ function PlanModal({ members, trainers, onClose, onSave }) {
 const statusColors = {
   Active: "bg-green-100 text-green-700",
   Inactive: "bg-slate-100 text-slate-500",
-  Completed: "bg-blue-100 text-blue-700",
+  Completed: "bg-orange-100 text-orange-700",
 };
 
 export default function WorkoutPlans() {
@@ -151,7 +151,7 @@ export default function WorkoutPlans() {
           <p className="text-slate-500 mt-1">Create and assign workout plans to members.</p>
         </div>
         <button onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition">
+          className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-medium transition">
           <Plus size={18} /> Create Plan
         </button>
       </div>
@@ -159,7 +159,7 @@ export default function WorkoutPlans() {
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Plans", value: plans.length, color: "text-blue-600" },
+          { label: "Total Plans", value: plans.length, color: "text-orange-600" },
           { label: "Active Plans", value: plans.filter((p) => p.status === "Active").length, color: "text-green-600" },
           { label: "Assigned to Members", value: plans.filter((p) => p.member_name).length, color: "text-purple-600" },
         ].map((s) => (

@@ -54,7 +54,7 @@ export default function TrainerProfile() {
   return (
     <div className="px-6 py-8">
       <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-        <User size={24} className="text-blue-400" /> My Profile
+        <User size={24} className="text-orange-400" /> My Profile
       </h1>
       <p className="text-slate-500 text-sm mt-1 mb-6">
         This is what members see when choosing a coach.
@@ -66,7 +66,7 @@ export default function TrainerProfile() {
           disabled={uploadingPhoto}
           className="relative w-24 h-24 rounded-full disabled:opacity-70 shrink-0"
         >
-          <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center overflow-hidden">
+          <div className="w-24 h-24 bg-orange-600 rounded-full flex items-center justify-center overflow-hidden">
             {photo ? (
               <img src={photo} alt={profile?.full_name} className="w-full h-full object-cover" />
             ) : (
@@ -75,7 +75,7 @@ export default function TrainerProfile() {
           </div>
           <div className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center border-2 border-slate-900 shadow">
             {uploadingPhoto ? (
-              <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <div className="w-3.5 h-3.5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
             ) : (
               <Camera size={14} className="text-slate-700" />
             )}
@@ -85,8 +85,8 @@ export default function TrainerProfile() {
 
         <div className="text-center sm:text-left">
           <h2 className="text-xl font-bold text-white">{profile?.full_name}</h2>
-          <p className="text-blue-400 text-sm font-medium mt-0.5">{profile?.specialization || "Fitness Coach"}</p>
-          {msg && <p className="text-xs font-medium text-blue-400 mt-2">{msg}</p>}
+          <div className="flex flex-wrap gap-2 mt-2">{(profile?.specializations || []).length ? profile.specializations.map((item) => <span key={item} className="px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-400 text-xs font-semibold">{item}</span>) : <span className="text-orange-400 text-sm font-medium">Fitness Coach</span>}</div>
+          {msg && <p className="text-xs font-medium text-orange-400 mt-2">{msg}</p>}
 
           <div className="mt-4 space-y-1.5 text-sm text-slate-400">
             <p className="flex items-center gap-2 justify-center sm:justify-start"><Mail size={14} /> {profile?.email}</p>
@@ -97,7 +97,7 @@ export default function TrainerProfile() {
       </div>
 
       <p className="text-slate-600 text-xs mt-4">
-        To change your name, email, phone, or specialization, ask the gym admin to update it from the Trainers page.
+        To change your name, email, phone, or specializations, ask the gym admin to update them from the Trainers page.
       </p>
     </div>
   );

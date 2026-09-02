@@ -27,10 +27,10 @@ export default function TrainerLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-blue-950 to-black flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-black via-orange-950 to-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-blue-400">AveFit</h1>
+          <h1 className="text-4xl font-bold text-orange-400">AveFit</h1>
           <p className="text-slate-400 mt-1">Coach / Trainer Portal</p>
         </div>
 
@@ -47,7 +47,7 @@ export default function TrainerLogin() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                 placeholder="coach@avefit.com"
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
             <div>
@@ -59,7 +59,7 @@ export default function TrainerLogin() {
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                   placeholder="••••••••"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500 pr-12"
                 />
                 <button
                   onClick={() => setShowPass(!showPass)}
@@ -75,7 +75,7 @@ export default function TrainerLogin() {
             <button
               onClick={handleLogin}
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition"
+              className="w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition"
             >
               {loading ? "Logging in..." : "Login"}
             </button>

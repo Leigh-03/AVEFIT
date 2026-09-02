@@ -1,7 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, User } from "lucide-react";
+import { Star, User, ChevronLeft, ChevronRight, Heart, Sparkles, Briefcase, Check } from "lucide-react";
 import userApi from "../userApi";
+
+const GOAL_ALIASES = {
+  "Weight Loss": ["weight loss", "weight management", "cardio", "conditioning", "hiit", "circuit training", "group fitness"],
+  "Muscle Gain": ["muscle", "bodybuilding", "physique", "hypertrophy", "powerlifting", "olympic weightlifting", "kettlebell training", "calisthenics"],
+  "Maintain Weight": ["general fitness", "wellness", "maintenance", "functional fitness", "conditioning", "group fitness"],
+  "General Fitness": ["general fitness", "fitness", "functional fitness", "group fitness", "conditioning", "hiit", "circuit training"],
+};
+
+function expertiseFor(trainer) {
+  const items = [...(trainer.specializations || [])];
+  if (trainer.goal_specialty && !items.some((i) => i.toLowerCase() === trainer.goal_specialty.toLowerCase())) items.push(trainer.goal_specialty);
+  return items.slice(0, 8);
+}
+
+function scoreTrainer(trainer, goal) {
+  const text = `${(trainer.specializations || []).join(" ")} ${trainer.bio || ""} ${trainer.goal_specialty || ""}`.toLowerCase();
+  const aliases = GOAL_ALIASES[goal] || GOAL_ALIASES["General Fitness"];
+  let score = trainer.goal_specialty === goal ? 100 : 0;
+  aliases.forEach((word) => { if (text.includes(word)) score += 15; });
+  return score;
+}
 
 export default function CoachSelect() {
   const navigate = useNavigate();
@@ -10,131 +31,106 @@ export default function CoachSelect() {
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [goal, setGoal] = useState("General Fitness");
+  const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
 
   useEffect(() => {
     const goalData = JSON.parse(sessionStorage.getItem("avefit_goal") || "{}");
     setGoal(goalData.goal || "General Fitness");
-
     userApi.get("/trainers")
       .then((res) => setTrainers(res.data.data || []))
-      .catch((err) => {
-        console.error(err);
-        setError("Couldn't load coaches right now.");
-      })
+      .catch((err) => { console.error(err); setError("Couldn't load coaches right now."); })
       .finally(() => setLoading(false));
   }, []);
 
-  const recommendedId = (() => {
-    const match = trainers.find((t) => t.goal_specialty === goal);
-    return match ? match.trainer_id : null;
-  })();
+  const ranked = useMemo(() => [...trainers].sort((a, b) => {
+    const diff = scoreTrainer(b, goal) - scoreTrainer(a, goal);
+    return diff || (a.full_name || "").localeCompare(b.full_name || "");
+  }), [trainers, goal]);
 
-  // Recommended coach shown first.
-  const sortedTrainers = [...trainers].sort((a, b) => {
-    if (a.trainer_id === recommendedId) return -1;
-    if (b.trainer_id === recommendedId) return 1;
-    return (a.full_name || "").localeCompare(b.full_name || "");
-  });
+  const current = ranked[index];
+  const recommended = ranked[0];
+  const currentScore = current ? scoreTrainer(current, goal) : 0;
+  const currentExpertise = current ? expertiseFor(current) : [];
+
+  const move = (delta) => {
+    if (!ranked.length) return;
+    setDirection(delta);
+    setIndex((i) => (i + delta + ranked.length) % ranked.length);
+  };
+
+  const handleTouchStart = (e) => setTouchStart(e.touches?.[0]?.clientX ?? null);
+  const handleTouchEnd = (e) => {
+    if (touchStart == null) return;
+    const end = e.changedTouches?.[0]?.clientX;
+    const delta = (end ?? touchStart) - touchStart;
+    if (Math.abs(delta) > 55) move(delta < 0 ? 1 : -1);
+    setTouchStart(null);
+  };
+
+  const selectCurrent = () => {
+    if (!current) return;
+    setSelectedId(current.trainer_id);
+    sessionStorage.setItem("avefit_trainer", JSON.stringify(current));
+    setError("");
+  };
 
   const handleContinue = () => {
-    if (!selectedId) {
-      setError("Please choose a coach to continue.");
-      return;
-    }
-    const trainer = trainers.find((t) => t.trainer_id === selectedId);
-    sessionStorage.setItem("avefit_trainer", JSON.stringify(trainer || { trainer_id: selectedId }));
+    if (!selectedId) { setError("Please choose a coach to continue."); return; }
     navigate("/user/confirm");
   };
 
-  const handleSkip = () => {
-    sessionStorage.removeItem("avefit_trainer");
-    navigate("/user/confirm");
-  };
+  const handleSkip = () => { sessionStorage.removeItem("avefit_trainer"); navigate("/user/confirm"); };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-orange-50 to-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Progress */}
+    <div className="min-h-screen bg-white dark:bg-[#0b0b0b] text-slate-900 dark:text-white flex items-center justify-center p-4">
+      <div className="w-full max-w-lg">
         <div className="flex items-center gap-2 mb-8">
-          {[1, 2, 3, 4, 5, 6].map((step) => (
-            <div key={step} className={`flex-1 h-1.5 rounded-full ${step <= 5 ? "bg-orange-500" : "bg-slate-100"}`} />
-          ))}
+          {[1,2,3,4,5,6].map((step) => <div key={step} className={`flex-1 h-1.5 rounded-full ${step <= 5 ? "bg-orange-500" : "bg-slate-200 dark:bg-slate-700"}`} />)}
         </div>
+        <div className="bg-white dark:bg-[#111] rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800">
+          <button onClick={() => navigate("/user/availability")} className="text-slate-500 hover:text-orange-500 text-sm mb-4">← Back</button>
+          <div className="flex items-start justify-between gap-4 mb-2">
+            <div><h2 className="text-2xl font-bold">Choose Your Coach</h2><p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Swipe through available coaches and find the expertise that fits your goal.</p></div>
+            <div className="rounded-full bg-orange-500/10 text-orange-500 p-2"><Heart size={18}/></div>
+          </div>
 
-        <div className="bg-white rounded-3xl p-8 shadow-2xl border border-slate-200 max-h-[85vh] overflow-y-auto">
-          <button onClick={() => navigate("/user/availability")} className="text-slate-500 hover:text-slate-900 text-sm mb-4 flex items-center gap-1">
-            ← Back
-          </button>
-
-          <h2 className="text-2xl font-bold text-slate-900 mb-1">Choose Your Coach</h2>
-          <p className="text-slate-500 text-sm mb-6">Pick a trainer to guide your program. We've highlighted the best fit for your goal.</p>
-
-          {loading ? (
-            <div className="space-y-3 mb-6">
-              {[...Array(3)].map((_, i) => <div key={i} className="h-24 bg-slate-50 rounded-2xl animate-pulse" />)}
-            </div>
-          ) : sortedTrainers.length === 0 ? (
-            <div className="text-center py-10 text-slate-500 text-sm mb-6">
-              No coaches available yet — you can still continue and get matched later.
-            </div>
+          {loading ? <div className="h-[430px] bg-slate-50 dark:bg-slate-900 rounded-3xl animate-pulse mt-6" /> : !ranked.length ? (
+            <div className="text-center py-16 text-slate-500 text-sm">No active coaches are available yet.</div>
           ) : (
-            <div className="space-y-3 mb-6">
-              {sortedTrainers.map((t) => {
-                const isRecommended = t.trainer_id === recommendedId;
-                const isSelected = selectedId === t.trainer_id;
-                return (
-                  <button
-                    key={t.trainer_id}
-                    onClick={() => { setSelectedId(t.trainer_id); setError(""); }}
-                    className={`w-full text-left p-4 rounded-2xl border-2 transition flex gap-4 items-center ${
-                      isSelected
-                        ? "border-orange-500 bg-orange-500/10"
-                        : isRecommended
-                        ? "border-amber-500/60 bg-amber-500/5 hover:border-amber-400"
-                        : "border-slate-200 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="w-14 h-14 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center shrink-0">
-                      {t.photo_url ? (
-                        <img src={t.photo_url} alt={t.full_name} className="w-full h-full object-cover" />
-                      ) : (
-                        <User size={24} className="text-slate-500" />
-                      )}
+            <>
+              <div className="relative mt-6">
+                <button onClick={() => move(-1)} aria-label="Previous coach" className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-11 h-11 rounded-full bg-black text-white shadow-lg flex items-center justify-center hover:bg-orange-500 transition"><ChevronLeft/></button>
+                <button onClick={() => move(1)} aria-label="Next coach" className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-11 h-11 rounded-full bg-black text-white shadow-lg flex items-center justify-center hover:bg-orange-500 transition"><ChevronRight/></button>
+                <div key={current.trainer_id} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} className={`overflow-hidden rounded-3xl border-2 ${selectedId === current.trainer_id ? "border-orange-500" : "border-slate-200 dark:border-slate-800"} bg-slate-50 dark:bg-[#171717] shadow-lg`}>
+                  <div className="h-56 bg-black flex items-center justify-center overflow-hidden">
+                    {current.photo_url ? <img src={current.photo_url} alt={current.full_name} className="w-full h-full object-cover" /> : <User size={82} className="text-orange-500"/>}
+                  </div>
+                  <div className="p-5">
+                    {index === 0 && <span className="inline-flex items-center gap-1 rounded-full bg-orange-500 text-white px-3 py-1 text-xs font-bold mb-3"><Sparkles size={12}/> Best match for {goal}</span>}
+                    <h3 className="text-2xl font-bold">{current.full_name}</h3>
+                    <p className="text-orange-500 font-semibold mt-1">{(current.specializations || []).join(" • ") || "General Fitness Coach"}</p>
+                    {current.bio && <p className="text-sm text-slate-500 dark:text-slate-400 mt-3 leading-6">{current.bio}</p>}
+                    <div className="mt-4">
+                      <p className="text-xs uppercase tracking-wider font-bold text-slate-400 mb-2">Expertise</p>
+                      <div className="flex flex-wrap gap-2">{currentExpertise.map((item) => <span key={item} className="px-3 py-1 rounded-full bg-white dark:bg-black border border-slate-200 dark:border-slate-700 text-xs font-medium">{item}</span>)}</div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      {isRecommended && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-400 mb-1">
-                          <Star size={12} className="fill-amber-400" /> Recommended for {goal}
-                        </span>
-                      )}
-                      <p className="font-semibold text-slate-900 truncate">{t.full_name}</p>
-                      <p className="text-xs text-slate-500 truncate">{t.specialization || "General Fitness Coach"}</p>
-                      {t.bio && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{t.bio}</p>}
-                    </div>
-                    {isSelected && (
-                      <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center shrink-0">
-                        <div className="w-2 h-2 bg-white rounded-full" />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                    <div className="mt-4 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"><Briefcase size={14}/> Recommended match score: <b className="text-orange-500">{Math.min(100, Math.max(60, currentScore))}%</b></div>
+                    <button onClick={selectCurrent} className={`w-full mt-5 py-3 rounded-xl font-bold transition ${selectedId === current.trainer_id ? "bg-black dark:bg-white text-white dark:text-black" : "bg-orange-500 hover:bg-orange-600 text-white"}`}>
+                      {selectedId === current.trainer_id ? <span className="inline-flex items-center gap-2"><Check size={17}/> Selected Coach</span> : "Choose This Coach"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-center gap-1.5 mt-4">{ranked.map((t, i) => <button key={t.trainer_id} onClick={() => setIndex(i)} aria-label={`Show ${t.full_name}`} className={`h-2 rounded-full transition-all ${i === index ? "w-7 bg-orange-500" : "w-2 bg-slate-300 dark:bg-slate-700"}`} />)}</div>
+              <p className="text-center text-xs text-slate-400 mt-2">Coach {index + 1} of {ranked.length}{direction ? " · use the arrows to browse" : " · swipe-style browsing"}</p>
+              <div className="mt-5 rounded-2xl border border-orange-200 dark:border-orange-900/50 bg-orange-500/5 p-4"><p className="text-xs font-bold text-orange-500 flex items-center gap-2"><Sparkles size={14}/> Our recommendation</p><p className="text-sm mt-1 text-slate-600 dark:text-slate-300">{recommended.full_name} is the strongest match for <b>{goal}</b> based on the coach's listed specialty and expertise.</p></div>
+            </>
           )}
-
-          {error && <p className="text-red-400 text-xs mb-4">{error}</p>}
-
-          <button
-            onClick={handleContinue}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition mb-2"
-          >
-            Continue to Confirmation →
-          </button>
-          {sortedTrainers.length > 0 && (
-            <button onClick={handleSkip} className="w-full text-slate-500 hover:text-slate-600 text-xs py-2 transition">
-              Skip for now, assign me a coach later
-            </button>
-          )}
+          {error && <p className="text-red-500 text-xs mt-4">{error}</p>}
+          <button onClick={handleContinue} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition mt-5">Continue to Confirmation →</button>
+          {ranked.length > 0 && <button onClick={handleSkip} className="w-full text-slate-500 hover:text-orange-500 text-xs py-3 transition">Skip for now, assign me a coach later</button>}
         </div>
       </div>
     </div>

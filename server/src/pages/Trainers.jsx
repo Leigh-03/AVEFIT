@@ -3,6 +3,7 @@ import { UserCheck, Plus, Search, Edit2, XCircle, Users, ChevronDown, ChevronUp,
 import api from "../services/api";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const SPECIALIZATION_OPTIONS = ["High-Intensity Interval Training (HIIT)", "Circuit Training", "Olympic Weightlifting", "Powerlifting", "Calisthenics & Bodyweight", "Kettlebell Training", "Functional Fitness", "CrossFit Coaching", "Bodybuilding & Physique", "Weight Loss & Management", "Group Fitness"];
 
 const statusColors = {
   Active: "bg-green-100 text-green-700",
@@ -11,8 +12,9 @@ const statusColors = {
 
 function TrainerModal({ trainer, onClose, onSave }) {
   const [form, setForm] = useState(
-    trainer || { full_name: "", email: "", phone: "", specialization: "" }
+    trainer || { full_name: "", email: "", phone: "", specializations: [] }
   );
+  const [specializations, setSpecializations] = useState(trainer?.specializations || []);
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -24,7 +26,8 @@ function TrainerModal({ trainer, onClose, onSave }) {
     }
     setSaving(true);
     try {
-      const payload = { ...form, ...(password ? { password } : {}) };
+      const payload = { ...form, specializations, ...(password ? { password } : {}) };
+      delete payload.specialization;
       if (trainer) {
         await api.put(`/trainers/${trainer.trainer_id}`, { ...payload, status: trainer.status });
       } else {
@@ -52,7 +55,6 @@ function TrainerModal({ trainer, onClose, onSave }) {
             { label: "Full Name *", key: "full_name", type: "text" },
             { label: "Email *", key: "email", type: "email" },
             { label: "Phone", key: "phone", type: "text" },
-            { label: "Specialization", key: "specialization", type: "text" },
           ].map((f) => (
             <div key={f.key}>
               <label className="block text-sm font-medium text-slate-600 mb-1">{f.label}</label>
@@ -64,6 +66,16 @@ function TrainerModal({ trainer, onClose, onSave }) {
               />
             </div>
           ))}
+
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-2">Specializations <span className="text-xs font-normal text-slate-400">(choose one or more)</span></label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+              {SPECIALIZATION_OPTIONS.map((option) => {
+                const selected = specializations.includes(option);
+                return <button type="button" key={option} onClick={() => setSpecializations((current) => selected ? current.filter((x) => x !== option) : [...current, option])} className={`text-left px-3 py-2 rounded-lg border text-sm ${selected ? "border-orange-500 bg-orange-50 text-orange-700" : "border-slate-200 text-slate-600"}`}>{selected ? "✓ " : ""}{option}</button>;
+              })}
+            </div>
+          </div>
 
           <div className="pt-2 border-t">
             <label className="block text-sm font-medium text-slate-600 mb-1">
@@ -329,7 +341,7 @@ export default function Trainers() {
 
   const filtered = trainers.filter((t) =>
     t.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    t.specialization?.toLowerCase().includes(search.toLowerCase()) ||
+    (t.specializations || []).join(" ").toLowerCase().includes(search.toLowerCase()) ||
     t.email?.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -423,7 +435,7 @@ export default function Trainers() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600">{trainer.specialization || "—"}</td>
+                    <td className="px-6 py-4 text-slate-600">{trainer.specializations?.join(" • ") || "—"}</td>
                     <td className="px-6 py-4 text-slate-600">{trainer.phone || "—"}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[trainer.status] || statusColors.Inactive}`}>

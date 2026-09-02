@@ -1,0 +1,26 @@
+name: Bug report
+description: Report incorrect metadata, a broken asset, or package/site behavior.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve Workout Guide.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include the exercise slug, package version, and a minimal reproduction when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Node 24, Expo, Chrome…

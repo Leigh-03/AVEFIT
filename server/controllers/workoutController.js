@@ -26,11 +26,11 @@ const getCategories = async (req, res) => {
 
 const createWorkout = async (req, res) => {
   try {
-    const { exercise_name, category_id, muscle_group, difficulty, calories_per_minute, description, equipment, video_url, movement_steps } = req.body;
+    const { exercise_name, category_id, muscle_group, difficulty, calories_per_minute, description, equipment, movement_steps } = req.body;
     const result = await pool.query(`
-      INSERT INTO exercises (exercise_name, category_id, muscle_group, difficulty, calories_per_minute, description, equipment, video_url, movement_steps)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *
-    `, [exercise_name, category_id || null, muscle_group, difficulty, calories_per_minute || null, description, equipment, video_url, movement_steps ? JSON.stringify(movement_steps) : null]);
+      INSERT INTO exercises (exercise_name, category_id, muscle_group, difficulty, calories_per_minute, description, equipment, movement_steps)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *
+    `, [exercise_name, category_id || null, muscle_group, difficulty, calories_per_minute || null, description, equipment, movement_steps ? JSON.stringify(movement_steps) : null]);
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -40,11 +40,11 @@ const createWorkout = async (req, res) => {
 const updateWorkout = async (req, res) => {
   try {
     const { id } = req.params;
-    const { exercise_name, category_id, muscle_group, difficulty, calories_per_minute, description, equipment, video_url, movement_steps } = req.body;
+    const { exercise_name, category_id, muscle_group, difficulty, calories_per_minute, description, equipment, movement_steps } = req.body;
     await pool.query(`
       UPDATE exercises SET exercise_name=$1, category_id=$2, muscle_group=$3, difficulty=$4,
-      calories_per_minute=$5, description=$6, equipment=$7, video_url=$8, movement_steps=$9 WHERE exercise_id=$10
-    `, [exercise_name, category_id || null, muscle_group, difficulty, calories_per_minute || null, description, equipment, video_url, movement_steps ? JSON.stringify(movement_steps) : null, id]);
+      calories_per_minute=$5, description=$6, equipment=$7, movement_steps=$8 WHERE exercise_id=$9
+    `, [exercise_name, category_id || null, muscle_group, difficulty, calories_per_minute || null, description, equipment, movement_steps ? JSON.stringify(movement_steps) : null, id]);
     res.json({ success: true, message: "Exercise updated." });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

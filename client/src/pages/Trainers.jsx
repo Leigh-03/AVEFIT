@@ -1,9 +1,25 @@
 import { useEffect, useState, useRef } from "react";
-import { UserCheck, Plus, Search, Edit2, XCircle, Users, ChevronDown, ChevronUp, Dumbbell, Trash2, X, Camera } from "lucide-react";
+import { UserCheck, Plus, Search, Edit2, XCircle, Users, UserCircle, ChevronDown, ChevronUp, Dumbbell, Trash2, X, Camera, Check } from "lucide-react";
 import api from "../services/api";
 import { fileToCompressedDataUrl } from "../utils/imageUpload";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+const SPECIALIZATION_OPTIONS = [
+  "High-Intensity Interval Training (HIIT)",
+  "Circuit Training",
+  "Olympic Weightlifting",
+  "Powerlifting",
+  "Calisthenics & Bodyweight",
+  "Kettlebell Training",
+  "Functional Fitness",
+  "CrossFit Coaching",
+  "Bodybuilding & Physique",
+  "Weight Loss & Management",
+  "Group Fitness",
+];
+
+const normalizeSpecializations = (trainer) => Array.isArray(trainer?.specializations) ? trainer.specializations.filter(Boolean) : [];
 
 const statusColors = {
   Active: "bg-green-100 text-green-700",
@@ -13,8 +29,9 @@ const statusColors = {
 function TrainerModal({ trainer, onClose, onSave }) {
   const fileInputRef = useRef(null);
   const [form, setForm] = useState(
-    trainer || { full_name: "", email: "", phone: "", specialization: "", goal_specialty: "" }
+    trainer || { full_name: "", email: "", phone: "", specializations: [], goal_specialty: "" }
   );
+  const [selectedSpecializations, setSelectedSpecializations] = useState(normalizeSpecializations(trainer));
   const [photo, setPhoto] = useState(trainer?.photo_url || null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [password, setPassword] = useState("");
@@ -44,7 +61,8 @@ function TrainerModal({ trainer, onClose, onSave }) {
     }
     setSaving(true);
     try {
-      const payload = { ...form, photo_url: photo, ...(password ? { password } : {}) };
+      const payload = { ...form, specializations: selectedSpecializations, photo_url: photo, ...(password ? { password } : {}) };
+      delete payload.specialization;
       if (trainer) {
         await api.put(`/trainers/${trainer.trainer_id}`, { ...payload, status: trainer.status });
       } else {
@@ -74,7 +92,7 @@ function TrainerModal({ trainer, onClose, onSave }) {
               disabled={uploadingPhoto}
               className="relative w-16 h-16 rounded-full disabled:opacity-70 shrink-0"
             >
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center overflow-hidden">
+              <div className="w-16 h-16 bg-orange-600 rounded-full flex items-center justify-center overflow-hidden">
                 {photo ? (
                   <img src={photo} alt="Trainer" className="w-full h-full object-cover" />
                 ) : (
@@ -83,7 +101,7 @@ function TrainerModal({ trainer, onClose, onSave }) {
               </div>
               <div className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full flex items-center justify-center border-2 border-slate-100 shadow">
                 {uploadingPhoto ? (
-                  <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3 h-3 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <Camera size={11} className="text-slate-700" />
                 )}
@@ -100,7 +118,6 @@ function TrainerModal({ trainer, onClose, onSave }) {
             { label: "Full Name *", key: "full_name", type: "text" },
             { label: "Email *", key: "email", type: "email" },
             { label: "Phone", key: "phone", type: "text" },
-            { label: "Specialization", key: "specialization", type: "text" },
           ].map((f) => (
             <div key={f.key}>
               <label className="block text-sm font-medium text-slate-600 mb-1">{f.label}</label>
@@ -108,17 +125,58 @@ function TrainerModal({ trainer, onClose, onSave }) {
                 type={f.type}
                 value={form[f.key] || ""}
                 onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
           ))}
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-slate-600">Specializations</label>
+              <span className="text-xs text-slate-400">Choose one or more</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+              {SPECIALIZATION_OPTIONS.map((option) => {
+                const selected = selectedSpecializations.includes(option);
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setSelectedSpecializations((current) => selected ? current.filter((item) => item !== option) : [...current, option])}
+                    className={`flex items-center gap-2 text-left px-3 py-2.5 rounded-xl border text-sm transition ${selected ? "border-orange-500 bg-orange-500/10 text-orange-700" : "border-slate-200 bg-white text-slate-600 hover:border-orange-300"}`}
+                  >
+                    <span className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${selected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300"}`}>
+                      {selected && <Check size={13} strokeWidth={3} />}
+                    </span>
+                    <span>{option}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {selectedSpecializations.length > 0 && (
+              <p className="text-xs text-orange-600 mt-2 font-medium">{selectedSpecializations.length} specialization{selectedSpecializations.length === 1 ? "" : "s"} selected.</p>
+            )}
+            <p className="text-xs text-slate-400 mt-1">These specialties are shown on the coach profile and used for coach recommendations.</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-1">Coach Bio / Profile</label>
+            <textarea
+              value={form.bio || ""}
+              onChange={(e) => setForm({ ...form, bio: e.target.value })}
+              placeholder="Short introduction, coaching approach, and experience..."
+              rows={3}
+              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+            />
+            <p className="text-xs text-slate-400 mt-1">This profile is shown to members when they browse coaches.</p>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-600 mb-1">Recommended For (goal match)</label>
             <select
               value={form.goal_specialty || ""}
               onChange={(e) => setForm({ ...form, goal_specialty: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value="">No specific match</option>
               <option value="Weight Loss">Weight Loss</option>
@@ -144,7 +202,7 @@ function TrainerModal({ trainer, onClose, onSave }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={trainer ? "Leave blank to keep current password" : "Set a login password"}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
             <p className="text-xs text-slate-400 mt-1">
               Lets this coach log in at <code>/trainer/login</code> to view their roster and assign workouts.
@@ -160,10 +218,33 @@ function TrainerModal({ trainer, onClose, onSave }) {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium transition disabled:opacity-50"
           >
             {saving ? "Saving..." : trainer ? "Save Changes" : "Add Trainer"}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TrainerProfileModal({ trainer, onClose, onEdit }) {
+  const expertise = [...new Set([...(trainer.specializations || normalizeSpecializations(trainer)), trainer.goal_specialty].filter(Boolean))].slice(0, 8);
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-[#111] rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
+        <div className="h-44 bg-black relative flex items-center justify-center overflow-hidden">
+          {trainer.photo_url ? <img src={trainer.photo_url} alt={trainer.full_name} className="w-full h-full object-cover" /> : <UserCircle size={90} className="text-orange-500" />}
+          <button onClick={onClose} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 text-black flex items-center justify-center"><X size={18}/></button>
+        </div>
+        <div className="p-6">
+          <p className="text-xs uppercase tracking-widest font-bold text-orange-500">Coach Profile</p>
+          <h2 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">{trainer.full_name}</h2>
+          <p className="text-orange-500 font-semibold mt-1">{(trainer.specializations || normalizeSpecializations(trainer)).length ? `${(trainer.specializations || normalizeSpecializations(trainer)).length} specialization${(trainer.specializations || normalizeSpecializations(trainer)).length === 1 ? "" : "s"}` : "General Fitness Coach"}</p>
+          {trainer.bio && <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">{trainer.bio}</p>}
+          <div className="mt-5"><p className="text-xs uppercase tracking-wider font-bold text-slate-400 mb-2">Expertise</p><div className="flex flex-wrap gap-2">{expertise.length ? expertise.map((x)=><span key={x} className="px-3 py-1.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 text-xs font-semibold">{x}</span>) : <span className="text-sm text-slate-400">No expertise listed yet.</span>}</div></div>
+          <div className="grid grid-cols-2 gap-3 mt-5 text-sm"><div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3"><p className="text-xs text-slate-400">Email</p><p className="font-medium mt-1 truncate">{trainer.email || "—"}</p></div><div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3"><p className="text-xs text-slate-400">Phone</p><p className="font-medium mt-1">{trainer.phone || "—"}</p></div></div>
+          <button onClick={onEdit} className="w-full mt-5 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl">Edit Coach Profile</button>
         </div>
       </div>
     </div>
@@ -225,7 +306,7 @@ function MemberRow({ member, trainer, exercises }) {
     <div className="border border-slate-200 rounded-xl overflow-hidden">
       <button onClick={toggleExpand} className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition text-left">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+          <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs">
             {member.first_name?.charAt(0)}{member.last_name?.charAt(0)}
           </div>
           <div>
@@ -271,7 +352,7 @@ function MemberRow({ member, trainer, exercises }) {
           </div>
           {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
           <button onClick={handleAssign} disabled={saving}
-            className="mt-3 flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-2 rounded-lg transition">
+            className="mt-3 flex items-center gap-1 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-2 rounded-lg transition">
             <Plus size={14} /> {saving ? "Assigning..." : "Assign Workout"}
           </button>
 
@@ -287,7 +368,7 @@ function MemberRow({ member, trainer, exercises }) {
                 {sessions.map((s) => (
                   <div key={s.session_id} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2">
                     <div className="flex items-center gap-2 text-xs">
-                      <Dumbbell size={14} className="text-blue-500" />
+                      <Dumbbell size={14} className="text-orange-500" />
                       <span className="font-medium text-slate-700">{s.exercise_name || "Exercise"}</span>
                       <span className="text-slate-400">· {s.session_date}</span>
                       {s.sets && <span className="text-slate-400">· {s.sets}x{s.reps || "?"}</span>}
@@ -331,7 +412,7 @@ function RosterModal({ trainer, onClose }) {
         <div className="p-6 border-b flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <Users size={20} className="text-blue-500" /> {trainer.full_name}'s Roster
+              <Users size={20} className="text-orange-500" /> {trainer.full_name}'s Roster
             </h2>
             <p className="text-slate-500 text-sm mt-0.5">Assign workouts to each member's weekly schedule.</p>
           </div>
@@ -362,6 +443,7 @@ export default function Trainers() {
   const [showModal, setShowModal] = useState(false);
   const [editTrainer, setEditTrainer] = useState(null);
   const [rosterTrainer, setRosterTrainer] = useState(null);
+  const [profileTrainer, setProfileTrainer] = useState(null);
 
   const fetchTrainers = () => {
     setLoading(true);
@@ -395,7 +477,7 @@ export default function Trainers() {
 
   const filtered = trainers.filter((t) =>
     t.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    t.specialization?.toLowerCase().includes(search.toLowerCase()) ||
+    (t.specializations || normalizeSpecializations(t)).join(" ").toLowerCase().includes(search.toLowerCase()) ||
     t.email?.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -416,6 +498,14 @@ export default function Trainers() {
         />
       )}
 
+      {profileTrainer && (
+        <TrainerProfileModal
+          trainer={profileTrainer}
+          onClose={() => setProfileTrainer(null)}
+          onEdit={() => { setEditTrainer(profileTrainer); setProfileTrainer(null); setShowModal(true); }}
+        />
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Trainers</h1>
@@ -423,7 +513,7 @@ export default function Trainers() {
         </div>
         <button
           onClick={handleAdd}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition"
+          className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-medium transition"
         >
           <Plus size={18} />
           Add Trainer
@@ -480,8 +570,8 @@ export default function Trainers() {
                   <tr key={trainer.trainer_id} className="hover:bg-slate-50 transition">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm flex-shrink-0">
-                          {trainer.full_name?.charAt(0)}
+                        <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-orange-500 font-bold text-sm flex-shrink-0 overflow-hidden border-2 border-orange-500/20">
+                          {trainer.photo_url ? <img src={trainer.photo_url} alt={trainer.full_name} className="w-full h-full object-cover" /> : trainer.full_name?.charAt(0)}
                         </div>
                         <div>
                           <p className="font-semibold text-slate-800">{trainer.full_name}</p>
@@ -489,7 +579,7 @@ export default function Trainers() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600">{trainer.specialization || "—"}</td>
+                    <td className="px-6 py-4 text-slate-600"><div className="flex flex-wrap gap-1.5 max-w-sm">{(trainer.specializations || normalizeSpecializations(trainer)).length ? (trainer.specializations || normalizeSpecializations(trainer)).slice(0, 3).map((item) => <span key={item} className="px-2 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-medium">{item}</span>) : <span>—</span>}{(trainer.specializations || normalizeSpecializations(trainer)).length > 3 && <span className="text-xs text-slate-400">+{(trainer.specializations || normalizeSpecializations(trainer)).length - 3} more</span>}</div></td>
                     <td className="px-6 py-4 text-slate-600">{trainer.phone || "—"}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[trainer.status] || statusColors.Inactive}`}>
@@ -502,6 +592,13 @@ export default function Trainers() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button
+                          onClick={() => setProfileTrainer(trainer)}
+                          className="p-1.5 rounded-lg hover:bg-orange-50 text-orange-500 transition"
+                          title="View Coach Profile"
+                        >
+                          <UserCircle size={16} />
+                        </button>
+                        <button
                           onClick={() => setRosterTrainer(trainer)}
                           className="p-1.5 rounded-lg hover:bg-green-50 text-green-500 transition"
                           title="View Roster / Assign Workouts"
@@ -510,7 +607,7 @@ export default function Trainers() {
                         </button>
                         <button
                           onClick={() => handleEdit(trainer)}
-                          className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition"
+                          className="p-1.5 rounded-lg hover:bg-orange-50 text-orange-500 transition"
                           title="Edit"
                         >
                           <Edit2 size={16} />

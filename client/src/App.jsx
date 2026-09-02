@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { UserAuthProvider } from "./context/UserAuthContext";
 import { TrainerAuthProvider } from "./context/TrainerAuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 // Admin
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -30,6 +31,7 @@ import ProgressPage from "./pages/ProgressPage";
 import ExerciseLibrary from "./pages/ExerciseLibrary";
 import AboutUs from "./pages/AboutUs";
 import ProfilePage from "./pages/ProfilePage";
+import Coaches from "./pages/Coaches";
 
 // Trainer Portal
 import TrainerLogin from "./pages/TrainerLogin";
@@ -67,6 +69,7 @@ function TrainerProtectedRoute({ children }) {
 
 export default function App() {
   return (
+    <ThemeProvider>
     <UserAuthProvider>
     <TrainerAuthProvider>
       <Routes>
@@ -133,6 +136,7 @@ export default function App() {
                   <Route path="/workout" element={<WorkoutPage />} />
                   <Route path="/progress" element={<ProgressPage />} />
                   <Route path="/exercises" element={<ExerciseLibrary />} />
+                  <Route path="/coaches" element={<Coaches />} />
                   <Route path="/about" element={<AboutUs />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="*" element={<Navigate to="/user/workout" replace />} />
@@ -147,5 +151,6 @@ export default function App() {
       </Routes>
     </TrainerAuthProvider>
     </UserAuthProvider>
+    </ThemeProvider>
   );
 }

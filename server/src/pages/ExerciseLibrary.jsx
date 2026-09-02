@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Search, X, ChevronDown } from "lucide-react";
 import userApi from "../userApi";
 
+
 function ExerciseDetail({ exercise, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/70 flex items-end justify-center z-50">
@@ -34,12 +35,7 @@ function ExerciseDetail({ exercise, onClose }) {
           </div>
         )}
 
-        {exercise.video_url && (
-          <a href={exercise.video_url} target="_blank" rel="noopener noreferrer"
-            className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition text-sm">
-            Watch Tutorial ▶
-          </a>
-        )}
+        {/* Video tutorials removed. The active client uses the bundled Workout Guide. */}
       </div>
     </div>
   );

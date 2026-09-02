@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Dumbbell, Search, Plus, Edit2, Trash2, X, ListOrdered, Video } from "lucide-react";
+import { Dumbbell, Search, Plus, Edit2, Trash2, X, ListOrdered } from "lucide-react";
+import { getWorkoutGuideExercise } from "../utils/workoutGuide";
 import api from "../services/api";
 
 const difficultyColors = {
@@ -18,7 +19,7 @@ function ExerciseModal({ exercise, categories, onClose, onSave }) {
   const [form, setForm] = useState(
     exercise
       ? { ...exercise }
-      : { exercise_name: "", category_id: "", muscle_group: "", difficulty: "Beginner", calories_per_minute: "", description: "", equipment: "", video_url: "" }
+      : { exercise_name: "", category_id: "", muscle_group: "", difficulty: "Beginner", calories_per_minute: "", description: "", equipment: "" }
   );
   const [steps, setSteps] = useState(
     exercise?.movement_steps && Array.isArray(exercise.movement_steps) && exercise.movement_steps.length === 3
@@ -40,15 +41,23 @@ function ExerciseModal({ exercise, categories, onClose, onSave }) {
     setSaving(true);
     setError("");
     try {
-      // Only save the tutorial if at least one step has a description filled in.
+      // The exercise visuals now come from the bundled Workout Guide repository.
+      // Keep only AveFit's exercise metadata and optional coaching notes in the database.
       const hasTutorial = steps.some((s) => s.description.trim());
-      // Make sure the link always has a scheme, so target="_blank" opens it
-      // correctly instead of treating it as a relative path on this site.
-      let video_url = form.video_url?.trim() || "";
-      if (video_url && !/^https?:\/\//i.test(video_url)) {
-        video_url = `https://${video_url}`;
-      }
-      const payload = { ...form, video_url, movement_steps: hasTutorial ? steps : null };
+      const {
+        exercise_name, category_id, muscle_group, difficulty,
+        calories_per_minute, description, equipment
+      } = form;
+      const payload = {
+        exercise_name,
+        category_id,
+        muscle_group,
+        difficulty,
+        calories_per_minute,
+        description,
+        equipment,
+        movement_steps: hasTutorial ? steps : null,
+      };
       if (exercise) {
         await api.put(`/workouts/${exercise.exercise_id}`, payload);
       } else {
@@ -79,12 +88,12 @@ function ExerciseModal({ exercise, categories, onClose, onSave }) {
               <label className="block text-sm font-medium text-slate-600 mb-1">Exercise Name *</label>
               <input type="text" value={form.exercise_name}
                 onChange={(e) => setForm({ ...form, exercise_name: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-1">Category</label>
               <select value={form.category_id || ""} onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
                 <option value="">Select category...</option>
                 {categories.map((c) => <option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
               </select>
@@ -93,18 +102,18 @@ function ExerciseModal({ exercise, categories, onClose, onSave }) {
               <label className="block text-sm font-medium text-slate-600 mb-1">Muscle Group *</label>
               <input type="text" value={form.muscle_group}
                 onChange={(e) => setForm({ ...form, muscle_group: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-1">Equipment</label>
               <input type="text" value={form.equipment || ""}
                 onChange={(e) => setForm({ ...form, equipment: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-1">Difficulty</label>
               <select value={form.difficulty || "Beginner"} onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
                 <option>Beginner</option>
                 <option>Intermediate</option>
                 <option>Advanced</option>
@@ -114,7 +123,7 @@ function ExerciseModal({ exercise, categories, onClose, onSave }) {
               <label className="block text-sm font-medium text-slate-600 mb-1">Calories / min</label>
               <input type="number" value={form.calories_per_minute || ""}
                 onChange={(e) => setForm({ ...form, calories_per_minute: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
             </div>
           </div>
 
@@ -122,26 +131,13 @@ function ExerciseModal({ exercise, categories, onClose, onSave }) {
             <label className="block text-sm font-medium text-slate-600 mb-1">Description</label>
             <textarea rows={2} value={form.description || ""}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-slate-600 mb-1 flex items-center gap-1.5">
-              <Video size={15} className="text-blue-600" /> Video Tutorial Link
-            </label>
-            <input type="text" value={form.video_url || ""}
-              onChange={(e) => setForm({ ...form, video_url: e.target.value })}
-              placeholder="https://youtube.com/watch?v=..."
-              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <p className="text-xs text-slate-400 mt-1">
-              Paste a YouTube or any video link — members will see a "Watch Video Tutorial" button that opens it in a new tab.
-            </p>
+              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
 
           {/* Movement Tutorial — 3 steps */}
           <div className="pt-2 border-t">
             <div className="flex items-center gap-2 mb-1">
-              <ListOrdered size={16} className="text-blue-600" />
+              <ListOrdered size={16} className="text-orange-600" />
               <label className="text-sm font-semibold text-slate-700">Movement Tutorial (3 steps)</label>
             </div>
             <p className="text-xs text-slate-400 mb-3">
@@ -151,7 +147,7 @@ function ExerciseModal({ exercise, categories, onClose, onSave }) {
               {steps.map((step, i) => (
                 <div key={i} className="bg-slate-50 border border-slate-200 rounded-xl p-3">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0">
+                    <span className="w-5 h-5 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center shrink-0">
                       {i + 1}
                     </span>
                     <input
@@ -159,7 +155,7 @@ function ExerciseModal({ exercise, categories, onClose, onSave }) {
                       value={step.title}
                       onChange={(e) => updateStep(i, "title", e.target.value)}
                       placeholder={`Step ${i + 1} title`}
-                      className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500"
                     />
                   </div>
                   <textarea
@@ -167,7 +163,7 @@ function ExerciseModal({ exercise, categories, onClose, onSave }) {
                     value={step.description}
                     onChange={(e) => updateStep(i, "description", e.target.value)}
                     placeholder="Describe what to do in this phase of the movement..."
-                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   />
                 </div>
               ))}
@@ -182,7 +178,7 @@ function ExerciseModal({ exercise, categories, onClose, onSave }) {
             Cancel
           </button>
           <button onClick={handleSubmit} disabled={saving}
-            className="px-5 py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition">
+            className="px-5 py-2.5 rounded-xl text-sm font-medium bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white transition">
             {saving ? "Saving..." : exercise ? "Save Changes" : "Add Exercise"}
           </button>
         </div>
@@ -257,11 +253,11 @@ export default function Workouts() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Exercises</h1>
-          <p className="text-slate-500 mt-1">Full exercise library, with 3-step movement tutorials.</p>
+          <p className="text-slate-500 mt-1">Manage the exercise library and use the bundled Workout Guide illustrations.</p>
         </div>
         <button
           onClick={handleAdd}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition"
+          className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-medium transition"
         >
           <Plus size={18} /> Add Exercise
         </button>
@@ -291,7 +287,7 @@ export default function Workouts() {
               key={c}
               onClick={() => setFilter(c)}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
-                filter === c ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                filter === c ? "bg-orange-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
               {c}
@@ -315,7 +311,7 @@ export default function Workouts() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filtered.map((exercise) => (
             <div key={exercise.exercise_id} className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition group relative">
-              <div className="bg-blue-600 p-5 text-white">
+              <div className="bg-orange-600 p-5 text-white">
                 <div className="flex items-center justify-between">
                   <Dumbbell size={24} />
                   <div className="flex items-center gap-2">
@@ -325,7 +321,7 @@ export default function Workouts() {
                   </div>
                 </div>
                 <h3 className="text-lg font-bold mt-3">{exercise.exercise_name}</h3>
-                <p className="text-blue-100 text-sm mt-1">{exercise.muscle_group || "Full Body"}</p>
+                <p className="text-orange-100 text-sm mt-1">{exercise.muscle_group || "Full Body"}</p>
               </div>
               <div className="p-4 space-y-3">
                 <p className="text-sm text-slate-500 line-clamp-2">{exercise.description || "No description."}</p>
@@ -340,18 +336,35 @@ export default function Workouts() {
                     {exercise.difficulty || "N/A"}
                   </span>
                 </div>
-                {exercise.movement_steps ? (
+                {(() => {
+                  const guide = getWorkoutGuideExercise(exercise.exercise_name);
+                  return guide ? (
+                    <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-2 border border-slate-100">
+                      <img
+                        src={`/workout-guide/${guide.frames[1].path}`}
+                        alt=""
+                        aria-hidden="true"
+                        className="w-14 h-14 object-contain rounded-lg bg-white brightness-0 opacity-60"
+                      />
+                      <div>
+                        <p className="text-xs font-semibold text-slate-700">Workout Guide</p>
+                        <p className="text-[11px] text-slate-400">3 illustrated movement frames</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-xs text-slate-400">
+                      <Dumbbell size={12} /> No matching Workout Guide entry
+                    </div>
+                  );
+                })()}
+                {exercise.movement_steps && (
                   <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                    <ListOrdered size={12} /> Tutorial added
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1 text-xs text-slate-400">
-                    <ListOrdered size={12} /> No tutorial yet
+                    <ListOrdered size={12} /> Coaching notes added
                   </div>
                 )}
                 <div className="flex gap-2 pt-1">
                   <button onClick={() => handleEdit(exercise)}
-                    className="flex-1 flex items-center justify-center gap-1 text-xs font-medium py-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition">
+                    className="flex-1 flex items-center justify-center gap-1 text-xs font-medium py-2 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition">
                     <Edit2 size={13} /> Edit
                   </button>
                   <button onClick={() => handleDelete(exercise)}

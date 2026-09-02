@@ -47,7 +47,7 @@ export default function Dashboard() {
             title="Total Members"
             value={stats?.totalMembers ?? 0}
             icon={<Users size={30} />}
-            color="bg-blue-500"
+            color="bg-orange-500"
             trend={`${stats?.activeMembers ?? 0} active`}
           />
           <StatCard

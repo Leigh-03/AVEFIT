@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Dumbbell, TrendingUp, Users, Award } from "lucide-react";
+import ThemeToggle from "../components/ThemeToggle";
 
 export default function Homepage() {
   const navigate = useNavigate();
@@ -16,12 +17,15 @@ export default function Homepage() {
         {/* Navbar */}
         <nav className="relative z-10 flex items-center justify-between px-8 py-6">
           <h1 className="text-3xl font-bold text-orange-500">AveFit</h1>
-          <button
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <button
             onClick={() => navigate("/user/login")}
             className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-xl font-semibold transition"
           >
             Login
-          </button>
+            </button>
+          </div>
         </nav>
 
         {/* Hero Content */}

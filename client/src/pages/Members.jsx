@@ -10,7 +10,7 @@ const statusColors = {
 
 function getBMICategory(bmi) {
   if (!bmi) return { label: "N/A", color: "text-slate-400" };
-  if (bmi < 18.5) return { label: "Underweight", color: "text-blue-500" };
+  if (bmi < 18.5) return { label: "Underweight", color: "text-orange-500" };
   if (bmi < 25) return { label: "Normal", color: "text-green-600" };
   if (bmi < 30) return { label: "Overweight", color: "text-orange-500" };
   return { label: "Obese", color: "text-red-500" };
@@ -74,7 +74,7 @@ function MemberModal({ member, onClose, onSave }) {
                   <select
                     value={form[f.key] || ""}
                     onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   >
                     {f.options.map((o) => <option key={o} value={o}>{o || "Select..."}</option>)}
                   </select>
@@ -83,14 +83,14 @@ function MemberModal({ member, onClose, onSave }) {
                     type={f.type}
                     value={form[f.key] || ""}
                     onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   />
                 )}
               </div>
             ))}
           </div>
           {form.height && form.weight && (
-            <p className="text-sm text-blue-600 font-medium">
+            <p className="text-sm text-orange-600 font-medium">
               BMI: {(parseFloat(form.weight) / Math.pow(parseFloat(form.height) / 100, 2)).toFixed(1)} (auto-calculated)
             </p>
           )}
@@ -103,7 +103,7 @@ function MemberModal({ member, onClose, onSave }) {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium disabled:opacity-50"
           >
             {saving ? "Saving..." : member ? "Save Changes" : "Add Member"}
           </button>
@@ -125,7 +125,7 @@ function ViewModal({ member, onClose, onEdit }) {
         </div>
         <div className="p-6 space-y-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
+            <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xl">
               {member.full_name?.charAt(0)}
             </div>
             <div>
@@ -150,7 +150,7 @@ function ViewModal({ member, onClose, onEdit }) {
               </div>
             ))}
           </div>
-          <div className="bg-blue-50 rounded-xl p-3 text-center">
+          <div className="bg-orange-50 rounded-xl p-3 text-center">
             <p className="text-xs text-slate-400">BMI</p>
             <p className="text-2xl font-bold text-slate-800 mt-1">
               {member.bmi ? parseFloat(member.bmi).toFixed(1) : "—"}
@@ -164,7 +164,7 @@ function ViewModal({ member, onClose, onEdit }) {
           </button>
           <button
             onClick={() => { onClose(); onEdit(member); }}
-            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium"
+            className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium"
           >
             Edit Member
           </button>
@@ -245,7 +245,7 @@ export default function Members() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition"
+          className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-medium transition"
         >
           <Plus size={18} />
           Add Member
@@ -276,7 +276,7 @@ export default function Members() {
               key={s}
               onClick={() => setFilter(s)}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
-                filter === s ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                filter === s ? "bg-orange-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
               {s}
@@ -334,7 +334,7 @@ export default function Members() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => setViewMember(member)} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition" title="View">
+                          <button onClick={() => setViewMember(member)} className="p-1.5 rounded-lg hover:bg-orange-50 text-orange-500 transition" title="View">
                             <Eye size={16} />
                           </button>
                           {member.status === "Pending" && (

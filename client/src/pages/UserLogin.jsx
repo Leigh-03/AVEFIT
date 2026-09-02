@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+import ThemeToggle from "../components/ThemeToggle";
 import { useUserAuth } from "../context/UserAuthContext";
 import userApi from "../userApi";
 
@@ -62,7 +63,8 @@ export default function UserLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-orange-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen relative bg-gradient-to-br from-white via-orange-50 to-white flex items-center justify-center p-4">
+      <div className="absolute top-5 right-5 z-20"><ThemeToggle /></div>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">

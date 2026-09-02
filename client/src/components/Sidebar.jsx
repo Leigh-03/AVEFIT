@@ -37,7 +37,7 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-black text-white flex flex-col h-screen sticky top-0">
       <div className="p-6 border-b border-slate-700">
-        <h1 className="text-3xl font-bold text-blue-400">AveFit</h1>
+        <h1 className="text-3xl font-bold text-orange-400">AveFit</h1>
         <p className="text-slate-400 text-sm">Admin Panel</p>
       </div>
 
@@ -47,7 +47,7 @@ export default function Sidebar() {
           return (
             <Link key={item.to} to={item.to}
               className={`flex items-center gap-3 px-6 py-3 transition
-                ${isActive ? "bg-blue-600 text-white border-r-4 border-blue-400" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}>
+                ${isActive ? "bg-orange-600 text-white border-r-4 border-orange-400" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}>
               {item.icon}
               <span className="font-medium flex-1">{item.label}</span>
               {item.label === "Notifications" && unreadCount > 0 && (

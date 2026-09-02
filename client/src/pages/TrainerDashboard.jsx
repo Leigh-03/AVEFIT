@@ -73,7 +73,7 @@ function MemberRow({ member, exercises, onChanged }) {
     <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900">
       <button onClick={toggleExpand} className="w-full flex items-center justify-between px-4 py-4 hover:bg-slate-800/60 transition text-left">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-500/15 flex items-center justify-center text-blue-400 font-bold text-sm">
+          <div className="w-10 h-10 rounded-full bg-orange-500/15 flex items-center justify-center text-orange-400 font-bold text-sm">
             {member.first_name?.charAt(0)}{member.last_name?.charAt(0)}
           </div>
           <div>
@@ -189,7 +189,7 @@ function MemberRow({ member, exercises, onChanged }) {
           </div>
           {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
           <button onClick={handleAssign} disabled={saving}
-            className="mt-3 flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-2 rounded-lg transition">
+            className="mt-3 flex items-center gap-1 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-2 rounded-lg transition">
             <Plus size={14} /> {saving ? "Assigning..." : "Assign Workout"}
           </button>
 
@@ -205,7 +205,7 @@ function MemberRow({ member, exercises, onChanged }) {
                 {sessions.map((s) => (
                   <div key={s.session_id} className="flex items-center justify-between bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
                     <div className="flex items-center gap-2 text-xs">
-                      <Dumbbell size={14} className="text-blue-400" />
+                      <Dumbbell size={14} className="text-orange-400" />
                       <span className="font-medium text-slate-200">{s.exercise_name || "Exercise"}</span>
                       <span className="text-slate-500">· {s.session_date}</span>
                       {s.sets && <span className="text-slate-500">· {s.sets}x{s.reps || "?"}</span>}
@@ -253,7 +253,7 @@ export default function TrainerDashboard() {
   return (
     <div className="px-6 py-8">
       <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-        <Users size={24} className="text-blue-400" /> My Roster
+        <Users size={24} className="text-orange-400" /> My Roster
       </h1>
       <p className="text-slate-500 text-sm mt-1 mb-6">
         Members who chose you as their coach. Expand a member to assign workouts to their weekly schedule.

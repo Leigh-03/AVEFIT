@@ -101,7 +101,7 @@ export default function Analytics() {
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {[
-          { label: "Total Members", value: data?.summary.totalMembers, icon: <Users size={22} />, color: "bg-blue-500" },
+          { label: "Total Members", value: data?.summary.totalMembers, icon: <Users size={22} />, color: "bg-orange-500" },
           { label: "Average BMI", value: data?.summary.avgBmi, icon: <TrendingUp size={22} />, color: "bg-green-500" },
           { label: "Workout Plans", value: data?.summary.totalWorkoutPlans, icon: <Dumbbell size={22} />, color: "bg-purple-500" },
           { label: "Nutrition Plans", value: data?.summary.totalNutritionPlans, icon: <Apple size={22} />, color: "bg-orange-500" },
@@ -145,7 +145,7 @@ export default function Analytics() {
         <h3 className="text-lg font-bold text-slate-800 mb-4">BMI Distribution</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Underweight", range: "< 18.5", color: "bg-blue-100 text-blue-700" },
+            { label: "Underweight", range: "< 18.5", color: "bg-orange-100 text-orange-700" },
             { label: "Normal", range: "18.5 – 24.9", color: "bg-green-100 text-green-700" },
             { label: "Overweight", range: "25 – 29.9", color: "bg-yellow-100 text-yellow-700" },
             { label: "Obese", range: "≥ 30", color: "bg-red-100 text-red-700" },

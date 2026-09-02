@@ -4,7 +4,7 @@ import api from "../services/api";
 
 const typeColors = {
   workout: "bg-green-100 text-green-600",
-  membership: "bg-blue-100 text-blue-600",
+  membership: "bg-orange-100 text-orange-600",
   payment: "bg-orange-100 text-orange-600",
   alert: "bg-red-100 text-red-600",
   general: "bg-slate-100 text-slate-600",
@@ -72,7 +72,7 @@ export default function Notifications() {
         {unreadCount > 0 && (
           <button
             onClick={handleMarkAllRead}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition text-sm"
+            className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-medium transition text-sm"
           >
             <CheckCheck size={16} />
             Mark All as Read
@@ -87,7 +87,7 @@ export default function Notifications() {
             key={f}
             onClick={() => setFilter(f)}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
-              filter === f ? "bg-blue-600 text-white" : "bg-white text-slate-600 shadow-sm hover:bg-slate-50"
+              filter === f ? "bg-orange-600 text-white" : "bg-white text-slate-600 shadow-sm hover:bg-slate-50"
             }`}
           >
             {f}
@@ -119,7 +119,7 @@ export default function Notifications() {
               <div
                 key={notif.notification_id}
                 className={`flex items-start gap-4 px-6 py-4 transition hover:bg-slate-50 ${
-                  !notif.is_read ? "bg-blue-50/40" : ""
+                  !notif.is_read ? "bg-orange-50/40" : ""
                 }`}
               >
                 {/* Type badge */}
@@ -131,7 +131,7 @@ export default function Notifications() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     {!notif.is_read && (
-                      <Circle size={8} className="fill-blue-500 text-blue-500 flex-shrink-0" />
+                      <Circle size={8} className="fill-orange-500 text-orange-500 flex-shrink-0" />
                     )}
                     <p className={`text-sm ${!notif.is_read ? "font-semibold text-slate-800" : "text-slate-600"}`}>
                       {notif.message}
@@ -157,7 +157,7 @@ export default function Notifications() {
                   {!notif.is_read && (
                     <button
                       onClick={() => handleMarkRead(notif.notification_id)}
-                      className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-500 transition"
+                      className="p-1.5 rounded-lg hover:bg-orange-100 text-orange-500 transition"
                       title="Mark as read"
                     >
                       <CheckCheck size={16} />

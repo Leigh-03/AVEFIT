@@ -2,6 +2,7 @@ import { Bell, Search, UserCircle } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import ThemeToggle from "./ThemeToggle";
 
 const pageTitles = {
   "/admin/dashboard": "Dashboard",
@@ -37,7 +38,8 @@ export default function Navbar() {
         <Search size={18} className="text-slate-400" />
         <input type="text" placeholder="Search..." className="bg-transparent outline-none ml-2 w-full text-sm text-white placeholder-slate-500" />
       </div>
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-4">
+        <ThemeToggle />
         <button onClick={() => navigate("/admin/notifications")} className="relative hover:bg-slate-800 p-2 rounded-lg transition">
           <Bell size={22} className="text-slate-300" />
           {unreadCount > 0 && (
