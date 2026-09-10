@@ -45,10 +45,10 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <StatCard
             title="Total Members"
-            value={stats?.totalMembers ?? 0}
+            value={stats?.memberTotal ?? stats?.totalMembers ?? 0}
             icon={<Users size={30} />}
             color="bg-orange-500"
-            trend={`${stats?.activeMembers ?? 0} active`}
+            trend="Registered members"
           />
           <StatCard
             title="Pending Approval"

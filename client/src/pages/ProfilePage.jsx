@@ -98,16 +98,16 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#fffaf5] dark:bg-[#080808] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 pb-24">
+    <div className="min-h-screen bg-[#fffaf5] dark:bg-[#080808] text-slate-900 dark:text-white pb-24">
       {/* Header */}
-      <div className="bg-black px-6 pt-12 pb-8 text-center">
+      <div className="ave-page-hero px-6 pt-10 pb-8 text-center border-b border-orange-100 dark:border-white/5">
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploadingPhoto}
@@ -117,7 +117,7 @@ export default function ProfilePage() {
             {photo ? (
               <img src={photo} alt="Profile" className="w-full h-full object-cover" />
             ) : (
-              <User size={36} className="text-white" />
+              <User size={36} className="text-slate-900 dark:text-white" />
             )}
           </div>
           <div className="absolute bottom-0 right-0 w-7 h-7 bg-white rounded-full flex items-center justify-center border-2 border-black">

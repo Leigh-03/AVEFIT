@@ -19,6 +19,7 @@ import Notifications from "./pages/Notifications";
 // User
 import Homepage from "./pages/Homepage";
 import UserLogin from "./pages/UserLogin";
+import PendingApproval from "./pages/PendingApproval";
 import Assessment from "./pages/Assessment";
 import GoalSetup from "./pages/GoalSetup";
 import HealthConditions from "./pages/HealthConditions";
@@ -57,6 +58,7 @@ function DashboardProtectedRoute({ children }) {
   const token = localStorage.getItem("avefit_user_token");
   if (!token) return <Navigate to="/user/login" replace />;
   const savedUser = JSON.parse(localStorage.getItem("avefit_user") || "null");
+  if (savedUser?.account_status && savedUser.account_status !== "Active") return <Navigate to="/user/pending" replace />;
   if (savedUser && !savedUser.setup_completed) return <Navigate to="/user/assessment" replace />;
   return children;
 }
@@ -64,6 +66,8 @@ function DashboardProtectedRoute({ children }) {
 function TrainerProtectedRoute({ children }) {
   const token = localStorage.getItem("avefit_trainer_token");
   if (!token) return <Navigate to="/trainer/login" replace />;
+  const savedTrainer = JSON.parse(localStorage.getItem("avefit_trainer") || "null");
+  if (savedTrainer?.status && savedTrainer.status !== "Active") return <Navigate to="/trainer/login" replace />;
   return children;
 }
 
@@ -119,6 +123,7 @@ export default function App() {
 
         {/* User Onboarding (no layout) */}
         <Route path="/user/login" element={<UserLogin />} />
+        <Route path="/user/pending" element={<PendingApproval />} />
         <Route path="/user/assessment" element={<UserProtectedRoute><Assessment /></UserProtectedRoute>} />
         <Route path="/user/goal" element={<UserProtectedRoute><GoalSetup /></UserProtectedRoute>} />
         <Route path="/user/health" element={<UserProtectedRoute><HealthConditions /></UserProtectedRoute>} />

@@ -60,8 +60,8 @@ const createTrainer = async (req, res) => {
     const { full_name, email, phone, specializations, password, photo_url, goal_specialty, bio } = req.body;
     const hashed = password ? await bcrypt.hash(password, 10) : null;
     const result = await pool.query(`
-      INSERT INTO trainers (full_name, email, phone, specializations, password, photo_url, goal_specialty, bio)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO trainers (full_name, email, phone, specializations, password, photo_url, goal_specialty, bio, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Pending')
       RETURNING trainer_id, full_name, email, phone, specializations, photo_url, goal_specialty, bio, status, created_at
     `, [full_name, email, phone, sanitizeSpecializations(specializations), hashed, photo_url || null, goal_specialty || null, bio || null]);
     res.status(201).json({ success: true, data: result.rows[0] });
@@ -102,6 +102,38 @@ const updateTrainer = async (req, res) => {
   }
 };
 
+// PUT approve trainer
+const approveTrainer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      "UPDATE trainers SET status = 'Active', updated_at = NOW() WHERE trainer_id = $1 RETURNING trainer_id, status",
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: "Trainer not found." });
+    res.json({ success: true, message: "Trainer approved successfully.", trainer: result.rows[0] });
+  } catch (err) {
+    console.error("approveTrainer error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// PUT reject trainer
+const rejectTrainer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      "UPDATE trainers SET status = 'Rejected', updated_at = NOW() WHERE trainer_id = $1 RETURNING trainer_id, status",
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: "Trainer not found." });
+    res.json({ success: true, message: "Trainer rejected.", trainer: result.rows[0] });
+  } catch (err) {
+    console.error("rejectTrainer error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // PUT deactivate trainer
 const deactivateTrainer = async (req, res) => {
   try {
@@ -123,7 +155,7 @@ const getActiveTrainers = async (req, res) => {
     const result = await pool.query(`
       SELECT trainer_id, full_name, specializations, goal_specialty, photo_url, bio, phone, email
       FROM trainers
-      WHERE status = 'Active' OR status IS NULL
+      WHERE status = 'Active'
       ORDER BY full_name ASC
     `);
     res.json({ success: true, data: result.rows });
@@ -138,7 +170,7 @@ const getTrainerRoster = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(`
-      SELECT u.user_id, u.first_name, u.last_name, u.email, u.phone,
+      SELECT u.user_id, u.first_name, u.last_name, u.email, u.phone, u.profile_image,
              u.gender, u.age, u.birth_date, u.height, u.weight,
              u.fitness_goal, u.target_weight, u.activity_level, u.intensity,
              u.injuries, u.health_conditions,
@@ -150,6 +182,7 @@ const getTrainerRoster = async (req, res) => {
         WHERE user_id = u.user_id ORDER BY log_date DESC LIMIT 1
       ) pl ON true
       WHERE u.trainer_id = $1
+        AND LOWER(COALESCE(u.account_status, 'pending')) = 'active'
       ORDER BY u.first_name ASC
     `, [id]);
     res.json({ success: true, data: result.rows });
@@ -175,6 +208,14 @@ const loginTrainer = async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid email or password." });
 
     const trainer = result.rows[0];
+
+    if (trainer.status !== "Active") {
+      if (trainer.status === "Rejected") {
+        return res.status(403).json({ success: false, status: "Rejected", message: "Your trainer account was not approved. Please contact the gym administrator." });
+      }
+      return res.status(403).json({ success: false, status: "Pending", message: "Your trainer account is pending approval. Please wait 1-3 working days while the gym administrator reviews your account." });
+    }
+
     if (!trainer.password)
       return res.status(401).json({ success: false, message: "This account doesn't have portal access set up yet — ask the gym admin to set a password for you." });
 
@@ -214,7 +255,7 @@ const loginTrainer = async (req, res) => {
 const getMyRoster = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT u.user_id, u.first_name, u.last_name, u.email, u.phone,
+      SELECT u.user_id, u.first_name, u.last_name, u.email, u.phone, u.profile_image,
              u.gender, u.age, u.birth_date, u.height, u.weight,
              u.fitness_goal, u.target_weight, u.activity_level, u.intensity,
              u.injuries, u.health_conditions,
@@ -226,6 +267,7 @@ const getMyRoster = async (req, res) => {
         WHERE user_id = u.user_id ORDER BY log_date DESC LIMIT 1
       ) pl ON true
       WHERE u.trainer_id = $1
+        AND LOWER(COALESCE(u.account_status, 'pending')) = 'active'
       ORDER BY u.first_name ASC
     `, [req.trainer.trainer_id]);
     res.json({ success: true, data: result.rows });
@@ -287,7 +329,7 @@ const updateMyPhoto = async (req, res) => {
 
 // Helper: confirm a member belongs to the requesting trainer
 const memberBelongsToTrainer = async (userId, trainerId) => {
-  const check = await pool.query("SELECT user_id FROM users WHERE user_id = $1 AND trainer_id = $2", [userId, trainerId]);
+  const check = await pool.query("SELECT user_id FROM users WHERE user_id = $1 AND trainer_id = $2 AND COALESCE(account_status, 'Pending') = 'Active'", [userId, trainerId]);
   return check.rows.length > 0;
 };
 
@@ -380,7 +422,7 @@ const deleteSessionAsTrainer = async (req, res) => {
 };
 
 module.exports = {
-  getTrainers, getTrainerById, createTrainer, updateTrainer, deactivateTrainer,
+  getTrainers, getTrainerById, createTrainer, updateTrainer, approveTrainer, rejectTrainer, deactivateTrainer,
   getActiveTrainers, getTrainerRoster,
   loginTrainer, getMyRoster, getMyProfile, updateMyPhoto, getExerciseCatalog,
   getRosterMemberSessions, assignSessionAsTrainer, deleteSessionAsTrainer,

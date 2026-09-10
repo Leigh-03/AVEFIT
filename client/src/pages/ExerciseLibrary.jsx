@@ -122,11 +122,11 @@ export default function ExerciseLibrary() {
   });
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 pb-24">
+    <div className="min-h-screen bg-[#fffaf5] dark:bg-[#080808] text-slate-900 dark:text-white pb-24">
       {selected && <ExerciseDetail exercise={selected} onClose={() => setSelected(null)} />}
 
-      <div className="bg-black px-6 pt-12 pb-6">
-        <h1 className="text-2xl font-bold text-white">Exercise Library</h1>
+      <div className="ave-page-hero px-6 pt-10 pb-7 border-b border-orange-100 dark:border-white/5">
+        <h1 className="text-2xl font-black text-slate-900 dark:text-white">Exercise Library</h1>
         <p className="text-slate-400 text-sm mt-1">
           {exercises.length} exercises available · illustrated workout guides
         </p>

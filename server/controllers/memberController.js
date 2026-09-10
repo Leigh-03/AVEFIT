@@ -1,142 +1,518 @@
 const pool = require("../db");
 
-// GET all members
+// =====================================================
+// GET ALL MEMBERS FROM USERS TABLE
+// =====================================================
 const getMembers = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT member_id, full_name, email, phone, gender, age,
-             height, weight, bmi, fitness_goal, status, joined_date
-      FROM members ORDER BY joined_date DESC
+    SELECT
+    u.user_id AS member_id,
+    u.user_id,
+    u.first_name,
+    u.last_name,
+    CONCAT(u.first_name, ' ', u.last_name) AS full_name,
+    u.email,
+    u.phone,
+    u.gender,
+    u.birth_date,
+    u.age,
+    u.height,
+    u.weight,
+
+    CASE
+        WHEN u.height IS NOT NULL
+         AND u.height > 0
+         AND u.weight IS NOT NULL
+        THEN ROUND(
+            (u.weight / POWER(u.height / 100.0, 2))::numeric,
+            2
+        )
+        ELSE NULL
+    END AS bmi,
+
+    u.fitness_goal,
+    u.activity_level,
+    u.target_weight,
+    u.workout_days_per_week,
+    u.workout_duration,
+    u.preferred_days,
+    u.intensity,
+    u.injuries,
+    u.health_conditions,
+    u.profile_image,
+    u.trainer_id,
+
+    t.full_name AS trainer_name,
+    t.photo_url AS trainer_photo_url,
+    t.bio AS trainer_bio,
+
+    INITCAP(LOWER(COALESCE(u.account_status, 'pending'))) AS status,
+
+    u.created_at AS joined_date,
+    u.created_at,
+    u.updated_at
+
+FROM users u
+
+LEFT JOIN trainers t
+    ON t.trainer_id = u.trainer_id
+
+
+ORDER BY u.user_id DESC;
     `);
+
+    console.log(`✅ Retrieved ${result.rows.length} users from users table`);
+
     res.json({ success: true, data: result.rows });
-  } catch (err) {
-    console.error("getMembers error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+
+  } catch (error) {
+    console.error("❌ Error fetching members:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch members",
+      error: error.message
+    });
   }
 };
 
-// GET member by ID
+
+// =====================================================
+// GET SINGLE MEMBER
+// =====================================================
 const getMemberById = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(
-      "SELECT * FROM members WHERE member_id = $1", [id]
-    );
-    if (result.rows.length === 0)
-      return res.status(404).json({ success: false, message: "Member not found." });
-    res.json({ success: true, data: result.rows[0] });
-  } catch (err) {
-    console.error("getMemberById error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-// POST create member
-const createMember = async (req, res) => {
-  try {
-    const { full_name, email, phone, gender, age, height, weight, fitness_goal } = req.body;
-
-    // Calculate BMI if height and weight provided
-    let bmi = null;
-    if (height && weight) {
-      const heightM = parseFloat(height) / 100;
-      bmi = (parseFloat(weight) / (heightM * heightM)).toFixed(2);
-    }
 
     const result = await pool.query(`
-      INSERT INTO members (full_name, email, phone, gender, age, height, weight, bmi, fitness_goal, status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Pending')
-      RETURNING *
-    `, [full_name, email, phone, gender, age, height, weight, bmi, fitness_goal]);
+      SELECT
+        u.user_id AS member_id,
+        u.user_id,
+        u.first_name,
+        u.last_name,
+        TRIM(
+          CONCAT(
+            COALESCE(u.first_name, ''),
+            ' ',
+            COALESCE(u.last_name, '')
+          )
+        ) AS full_name,
 
-    res.status(201).json({ success: true, data: result.rows[0] });
-  } catch (err) {
-    console.error("createMember error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+        u.email,
+        u.phone,
+            u.gender,
+        u.birth_date,
+        u.age,
+        u.height,
+        u.weight,
+
+        CASE
+          WHEN u.height IS NOT NULL
+            AND u.height > 0
+            AND u.weight IS NOT NULL
+          THEN ROUND(
+            (u.weight / POWER(u.height / 100.0, 2))::numeric,
+            2
+          )
+          ELSE NULL
+        END AS bmi,
+
+        u.fitness_goal,
+        u.activity_level,
+        u.target_weight,
+        u.workout_days_per_week,
+        u.workout_duration,
+        u.preferred_days,
+        u.intensity,
+        u.injuries,
+        u.health_conditions,
+
+        u.profile_image,
+        u.trainer_id,
+
+        t.full_name AS trainer_name,
+        t.photo_url AS trainer_photo_url,
+        t.bio AS trainer_bio,
+
+        INITCAP(LOWER(COALESCE(u.account_status, 'pending'))) AS status,
+
+        u.created_at AS joined_date,
+        u.created_at,
+        u.updated_at
+
+      FROM users u
+
+      LEFT JOIN trainers t
+        ON t.trainer_id = u.trainer_id
+
+      WHERE u.user_id = $1
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "Member not found"
+      });
+    }
+
+    res.json(result.rows[0]);
+
+  } catch (error) {
+    console.error("❌ Error fetching member:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch member",
+      error: error.message
+    });
   }
 };
 
-// PUT update member
+
+// =====================================================
+// ASSIGN / CHANGE TRAINER
+// ADMIN ONLY
+// =====================================================
+const assignTrainer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { trainer_id } = req.body;
+
+    // Allow removing trainer
+    const trainerIdValue =
+      trainer_id === null ||
+      trainer_id === "" ||
+      trainer_id === undefined
+        ? null
+        : Number(trainer_id);
+
+    if (trainerIdValue !== null && Number.isNaN(trainerIdValue)) {
+      return res.status(400).json({
+        message: "Invalid trainer_id"
+      });
+    }
+
+    // Make sure member exists
+    const memberCheck = await pool.query(
+      `SELECT user_id FROM users WHERE user_id = $1`,
+      [id]
+    );
+
+    if (memberCheck.rows.length === 0) {
+      return res.status(404).json({
+        message: "Member not found"
+      });
+    }
+
+    // If assigning a trainer, verify trainer exists and is active
+    if (trainerIdValue !== null) {
+      const trainerCheck = await pool.query(
+        `
+        SELECT trainer_id
+        FROM trainers
+        WHERE trainer_id = $1
+          AND COALESCE(status, 'Active') = 'Active'
+        `,
+        [trainerIdValue]
+      );
+
+      if (trainerCheck.rows.length === 0) {
+        return res.status(404).json({
+          message: "Trainer not found or inactive"
+        });
+      }
+    }
+
+    // Update users table
+    const result = await pool.query(
+      `
+      UPDATE users
+      SET
+        trainer_id = $1,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = $2
+      RETURNING
+        user_id,
+        trainer_id
+      `,
+      [trainerIdValue, id]
+    );
+
+    res.json({
+      message:
+        trainerIdValue === null
+          ? "Trainer removed successfully"
+          : "Trainer assigned successfully",
+      member: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error("❌ Error assigning trainer:", error);
+
+    res.status(500).json({
+      message: "Failed to assign trainer",
+      error: error.message
+    });
+  }
+};
+
+
+// =====================================================
+// CREATE MEMBER
+// =====================================================
+const createMember = async (req, res) => {
+  return res.status(400).json({
+    message: "Members are created through user registration."
+  });
+};
+
+
+// =====================================================
+// UPDATE MEMBER
+// =====================================================
 const updateMember = async (req, res) => {
   try {
     const { id } = req.params;
-    const { full_name, email, phone, gender, age, height, weight, fitness_goal, status } = req.body;
 
-    let bmi = null;
-    if (height && weight) {
-      const heightM = parseFloat(height) / 100;
-      bmi = (parseFloat(weight) / (heightM * heightM)).toFixed(2);
+    const {
+      first_name,
+      last_name,
+      email,
+      phone,
+      gender,
+      birth_date,
+      age,
+      height,
+      weight,
+      fitness_goal,
+      activity_level,
+      target_weight
+    } = req.body;
+
+    const result = await pool.query(
+      `
+      UPDATE users
+      SET
+        first_name = COALESCE($1, first_name),
+        last_name = COALESCE($2, last_name),
+        email = COALESCE($3, email),
+        phone = COALESCE($4, phone),
+        gender = COALESCE($5, gender),
+        birth_date = COALESCE($6, birth_date),
+        age = COALESCE($7, age),
+        height = COALESCE($8, height),
+        weight = COALESCE($9, weight),
+        fitness_goal = COALESCE($10, fitness_goal),
+        activity_level = COALESCE($11, activity_level),
+        target_weight = COALESCE($12, target_weight),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = $13
+      RETURNING *
+      `,
+      [
+        first_name,
+        last_name,
+        email,
+        phone,
+        gender,
+        birth_date,
+        age,
+        height,
+        weight,
+        fitness_goal,
+        activity_level,
+        target_weight,
+        id
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "Member not found"
+      });
     }
 
-    await pool.query(`
-      UPDATE members
-      SET full_name=$1, email=$2, phone=$3, gender=$4, age=$5,
-          height=$6, weight=$7, bmi=$8, fitness_goal=$9, status=$10
-      WHERE member_id=$11
-    `, [full_name, email, phone, gender, age, height, weight, bmi, fitness_goal, status, id]);
+    res.json({
+      message: "Member updated successfully",
+      member: result.rows[0]
+    });
 
-    res.json({ success: true, message: "Member updated." });
-  } catch (err) {
-    console.error("updateMember error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+  } catch (error) {
+    console.error("❌ Error updating member:", error);
+
+    res.status(500).json({
+      message: "Failed to update member",
+      error: error.message
+    });
   }
 };
 
-// PUT approve member
+
+// =====================================================
+// APPROVE MEMBER
+// =====================================================
 const approveMember = async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query(
-      "UPDATE members SET status = 'Active' WHERE member_id = $1", [id]
+
+    const result = await pool.query(
+      `
+      UPDATE users
+      SET
+        account_status = 'Active',
+        updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = $1
+      RETURNING user_id, account_status
+      `,
+      [id]
     );
-    res.json({ success: true, message: "Member approved." });
-  } catch (err) {
-    console.error("approveMember error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "Member not found"
+      });
+    }
+
+    await pool.query(
+      "UPDATE members SET status = 'Active' WHERE email = (SELECT email FROM users WHERE user_id = $1)",
+      [id]
+    ).catch(() => {});
+
+    res.json({
+      message: "Member approved successfully",
+      member: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error("❌ Error approving member:", error);
+
+    res.status(500).json({
+      message: "Failed to approve member",
+      error: error.message
+    });
   }
 };
 
-// PUT reject member
+
+// =====================================================
+// REJECT MEMBER
+// =====================================================
 const rejectMember = async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query(
-      "UPDATE members SET status = 'Inactive' WHERE member_id = $1", [id]
+
+    const result = await pool.query(
+      `
+      UPDATE users
+      SET
+        account_status = 'Rejected',
+        updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = $1
+      RETURNING user_id, account_status
+      `,
+      [id]
     );
-    res.json({ success: true, message: "Member deactivated." });
-  } catch (err) {
-    console.error("rejectMember error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "Member not found"
+      });
+    }
+
+    await pool.query(
+      "UPDATE members SET status = 'Inactive' WHERE email = (SELECT email FROM users WHERE user_id = $1)",
+      [id]
+    ).catch(() => {});
+
+    res.json({
+      message: "Member rejected successfully",
+      member: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error("❌ Error rejecting member:", error);
+
+    res.status(500).json({
+      message: "Failed to reject member",
+      error: error.message
+    });
   }
 };
 
-// DELETE member
+
+// =====================================================
+// DELETE MEMBER
+// =====================================================
 const deleteMember = async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query("DELETE FROM members WHERE member_id = $1", [id]);
-    res.json({ success: true, message: "Member deleted." });
-  } catch (err) {
-    console.error("deleteMember error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+
+    const result = await pool.query(
+      `
+      DELETE FROM users
+      WHERE user_id = $1
+      RETURNING user_id
+      `,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "Member not found"
+      });
+    }
+
+    res.json({
+      message: "Member deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("❌ Error deleting member:", error);
+
+    res.status(500).json({
+      message: "Failed to delete member",
+      error: error.message
+    });
   }
 };
 
-// GET member body progress
+
+// =====================================================
+// MEMBER PROGRESS
+// =====================================================
 const getMemberProgress = async (req, res) => {
   try {
     const { id } = req.params;
+
     const result = await pool.query(
-      "SELECT * FROM progress_logs WHERE user_id = $1 ORDER BY log_date ASC", [id]
+      `
+      SELECT *
+      FROM progress_logs
+      WHERE user_id = $1
+      ORDER BY log_date DESC
+      `,
+      [id]
     );
-    res.json({ success: true, data: result.rows });
-  } catch (err) {
-    console.error("getMemberProgress error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+
+    res.json(result.rows);
+
+  } catch (error) {
+    console.error("❌ Error fetching progress:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch member progress",
+      error: error.message
+    });
   }
 };
 
+
 module.exports = {
-  getMembers, getMemberById, createMember, updateMember,
-  approveMember, rejectMember, deleteMember, getMemberProgress
+  getMembers,
+  getMemberById,
+  createMember,
+  updateMember,
+  assignTrainer,
+  approveMember,
+  rejectMember,
+  deleteMember,
+  getMemberProgress
 };

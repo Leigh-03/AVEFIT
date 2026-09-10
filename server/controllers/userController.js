@@ -13,23 +13,25 @@ const register = async (req, res) => {
     if (existing.rows.length > 0)
       return res.status(409).json({ success: false, message: "Email already registered." });
 
+    // New accounts must be approved by the gym admin before they can log in.
+    const accountStatus = "Pending";
+
     const hashed = await bcrypt.hash(password, 10);
     const result = await pool.query(`
-      INSERT INTO users (first_name, last_name, email, password, phone)
-      VALUES ($1,$2,$3,$4,$5)
-      RETURNING user_id, first_name, last_name, email, phone, fitness_goal, height, weight, gender, activity_level, setup_completed
-    `, [first_name, last_name, email, hashed, phone || null]);
+      INSERT INTO users (first_name, last_name, email, password, phone, account_status)
+      VALUES ($1,$2,$3,$4,$5,$6)
+      RETURNING user_id, first_name, last_name, email, phone, account_status, trainer_id, fitness_goal, height, weight, gender, activity_level, setup_completed
+    `, [first_name, last_name, email, hashed, phone || null, accountStatus]);
 
     const user = result.rows[0];
 
-    // Auto-login: hand back a token right away so the person doesn't have to log in twice.
-    const token = jwt.sign(
-      { user_id: user.user_id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "8h" }
-    );
-
-    res.status(201).json({ success: true, message: "Account created.", token, user });
+    // Do not issue a token yet. The account must be approved by an admin first.
+    res.status(201).json({
+      success: true,
+      message: "Account created and submitted for approval.",
+      user,
+      pending_approval: true,
+    });
   } catch (err) {
     console.error("register error:", err.message);
     res.status(500).json({ success: false, message: err.message });
@@ -45,9 +47,29 @@ const login = async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid email or password." });
 
     const user = result.rows[0];
+
+    // Always verify the password before revealing the account approval status.
     const valid = await bcrypt.compare(password, user.password);
     if (!valid)
       return res.status(401).json({ success: false, message: "Invalid email or password." });
+
+    const accountStatus = String(user.account_status || "pending").toLowerCase();
+
+    if (accountStatus !== "active") {
+      if (accountStatus === "rejected") {
+        return res.status(403).json({
+          success: false,
+          status: "Rejected",
+          message: "Your AveFit account was not approved. Please contact the gym administrator for assistance."
+        });
+      }
+
+      return res.status(403).json({
+        success: false,
+        status: "Pending",
+        message: "Your account is still pending approval. Please wait 1-3 working days while the gym administrator reviews your registration."
+      });
+    }
 
     const token = jwt.sign(
       { user_id: user.user_id, email: user.email },
@@ -64,6 +86,8 @@ const login = async (req, res) => {
         last_name: user.last_name,
         email: user.email,
         phone: user.phone,
+        account_status: user.account_status,
+        trainer_id: user.trainer_id,
         fitness_goal: user.fitness_goal,
         height: user.height,
         weight: user.weight,
@@ -103,7 +127,7 @@ const getProfile = async (req, res) => {
       `SELECT user_id, first_name, last_name, email, gender, birth_date, age, height, weight,
               fitness_goal, activity_level, phone, profile_image,
               target_weight, workout_days_per_week, workout_duration, preferred_days,
-              intensity, injuries, health_conditions, trainer_id, setup_completed
+              intensity, injuries, health_conditions, trainer_id, setup_completed, account_status
        FROM users WHERE user_id = $1`,
       [req.user.user_id]
     );
@@ -127,6 +151,37 @@ const updateProfile = async (req, res) => {
     } = req.body;
 
 
+
+    // When onboarding selects a coach, make sure the coach is still active.
+    if (trainer_id !== undefined && trainer_id !== null && trainer_id !== "") {
+      const trainerCheck = await pool.query(
+        `SELECT trainer_id FROM trainers
+         WHERE trainer_id = $1
+         AND (status = 'Active' OR status IS NULL)`,
+        [trainer_id]
+      );
+
+      if (trainerCheck.rows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "The selected coach is not available."
+        });
+      }
+    }
+
+    // Normalize workout duration so PostgreSQL accepts both UI values like
+    // "45 mins" and numeric values. The database stores the duration in minutes.
+    let normalizedWorkoutDuration = null;
+    if (workout_duration !== undefined && workout_duration !== null && workout_duration !== "") {
+      const durationMatch = String(workout_duration).match(/\d+/);
+      if (!durationMatch) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid workout duration. Please choose a valid duration."
+        });
+      }
+      normalizedWorkoutDuration = parseInt(durationMatch[0], 10);
+    }
 
     // Calculate BMI
     let bmi = null;
@@ -156,7 +211,7 @@ const updateProfile = async (req, res) => {
       age ?? null,
       target_weight ?? null,
       workout_days_per_week ?? null,
-      workout_duration ?? null,
+      normalizedWorkoutDuration,
       preferred_days ?? null,
       intensity ?? null,
       injuries ?? null,
@@ -167,12 +222,53 @@ const updateProfile = async (req, res) => {
       req.user.user_id,
     ]);
 
-    // Also update BMI in members table if linked
-    if (bmi) {
+    // Keep the admin member record synchronized with the registered user.
+    // A member record is created the first time onboarding is completed;
+    // existing records keep their current approval status.
+    if (typeof setup_completed === "boolean" && setup_completed === true) {
+      const userResult = await pool.query(
+        `SELECT user_id, first_name, last_name, email, phone, gender, age,
+                height, weight, fitness_goal, trainer_id
+         FROM users WHERE user_id = $1`,
+        [req.user.user_id]
+      );
+      const u = userResult.rows[0];
+      if (u) {
+        const existingMember = await pool.query(
+          `SELECT member_id, status FROM members WHERE LOWER(email) = LOWER($1) ORDER BY member_id LIMIT 1`,
+          [u.email]
+        );
+
+        const memberName = `${u.first_name || ""} ${u.last_name || ""}`.trim();
+        if (existingMember.rows.length === 0) {
+          await pool.query(`
+            INSERT INTO members
+              (full_name, email, phone, gender, age, height, weight, bmi,
+               fitness_goal, status, trainer_id)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'Pending',$10)
+          `, [
+            memberName, u.email, u.phone, u.gender, u.age, u.height, u.weight,
+            bmi || null, u.fitness_goal, u.trainer_id || null
+          ]);
+        } else {
+          await pool.query(`
+            UPDATE members
+            SET full_name=$1, phone=$2, gender=$3, age=$4, height=$5,
+                weight=$6, bmi=COALESCE($7,bmi), fitness_goal=$8,
+                trainer_id=COALESCE($9, trainer_id)
+            WHERE member_id=$10
+          `, [
+            memberName, u.phone, u.gender, u.age, u.height, u.weight,
+            bmi || null, u.fitness_goal, u.trainer_id || null,
+            existingMember.rows[0].member_id
+          ]);
+        }
+      }
+    } else if (bmi) {
       await pool.query(
         "UPDATE members SET bmi=$1 WHERE email=(SELECT email FROM users WHERE user_id=$2)",
         [bmi, req.user.user_id]
-      ).catch(() => {}); // silently fail if member not found
+      ).catch(() => {});
     }
 
     res.json({ success: true, message: "Profile updated." });

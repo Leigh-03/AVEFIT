@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, User, ChevronLeft, ChevronRight, Heart, Sparkles, Briefcase, Check } from "lucide-react";
+import { Briefcase, Check, Sparkles, User, X } from "lucide-react";
 import userApi from "../userApi";
 
 const GOAL_ALIASES = {
@@ -10,129 +10,345 @@ const GOAL_ALIASES = {
   "General Fitness": ["general fitness", "fitness", "functional fitness", "group fitness", "conditioning", "hiit", "circuit training"],
 };
 
-function expertiseFor(trainer) {
-  const items = [...(trainer.specializations || [])];
-  if (trainer.goal_specialty && !items.some((i) => i.toLowerCase() === trainer.goal_specialty.toLowerCase())) items.push(trainer.goal_specialty);
-  return items.slice(0, 8);
+function scoreTrainer(t, goal) {
+  const text = `${(t.specializations || []).join(" ")} ${t.bio || ""} ${t.goal_specialty || ""}`.toLowerCase();
+  return (t.goal_specialty === goal ? 100 : 0) +
+    (GOAL_ALIASES[goal] || GOAL_ALIASES["General Fitness"]).reduce((n, word) => n + (text.includes(word) ? 15 : 0), 0);
 }
 
-function scoreTrainer(trainer, goal) {
-  const text = `${(trainer.specializations || []).join(" ")} ${trainer.bio || ""} ${trainer.goal_specialty || ""}`.toLowerCase();
-  const aliases = GOAL_ALIASES[goal] || GOAL_ALIASES["General Fitness"];
-  let score = trainer.goal_specialty === goal ? 100 : 0;
-  aliases.forEach((word) => { if (text.includes(word)) score += 15; });
-  return score;
+function expertiseFor(t) {
+  return [...new Set([...(t.specializations || []), t.goal_specialty].filter(Boolean))].slice(0, 5);
+}
+
+function Photo({ trainer, compact = false }) {
+  return (
+    <div className={`relative bg-black overflow-hidden ${compact ? "h-40" : "h-64 sm:h-72"}`}>
+      {trainer.photo_url && (
+        <img
+          src={trainer.photo_url}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-35"
+        />
+      )}
+      {trainer.photo_url ? (
+        <img
+          src={trainer.photo_url}
+          alt={trainer.full_name}
+          className="relative z-10 w-full h-full object-contain p-3"
+        />
+      ) : (
+        <div className="relative z-10 w-full h-full flex items-center justify-center">
+          <User size={compact ? 58 : 78} className="text-orange-500" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProfileModal({ trainer, onClose, onSelect, selected }) {
+  const [photoOpen, setPhotoOpen] = useState(false);
+  if (!trainer) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-[#111] rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto border border-slate-200 dark:border-slate-800"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => trainer.photo_url && setPhotoOpen(true)}
+            className={`w-full ${trainer.photo_url ? "cursor-zoom-in" : "cursor-default"}`}
+            aria-label={trainer.photo_url ? "View full profile photo" : "Profile photo unavailable"}
+          >
+            <Photo trainer={trainer} />
+          </button>
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80"
+            aria-label="Close profile"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="p-6">
+          <p className="text-xs uppercase tracking-wider text-orange-500 font-bold">Coach Profile</p>
+          <h3 className="text-3xl font-bold mt-1">{trainer.full_name}</h3>
+          <p className="text-orange-500 font-semibold mt-1">{trainer.goal_specialty || "General Fitness Coach"}</p>
+          <p className="text-sm leading-7 text-slate-600 dark:text-slate-300 mt-5 whitespace-pre-line">
+            {trainer.bio || "No profile description has been added yet."}
+          </p>
+          <div className="flex flex-wrap gap-2 mt-5">
+            {expertiseFor(trainer).map((item) => (
+              <span key={item} className="px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 text-xs font-semibold">
+                {item}
+              </span>
+            ))}
+          </div>
+          <button
+            onClick={() => { onSelect(trainer); onClose(); }}
+            className={`w-full mt-6 py-3 rounded-xl font-bold transition ${selected ? "bg-green-500 text-white" : "bg-orange-500 hover:bg-orange-600 text-white"}`}
+          >
+            {selected ? "Coach Selected ✓" : "Select This Coach"}
+          </button>
+        </div>
+      </div>
+      {photoOpen && trainer.photo_url && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 sm:p-8"
+          onClick={() => setPhotoOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setPhotoOpen(false)}
+            className="absolute top-4 right-4 z-[110] w-12 h-12 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center border border-white/20"
+            aria-label="Close full profile photo"
+          >
+            <X size={24} />
+          </button>
+          <img
+            src={trainer.photo_url}
+            alt={trainer.full_name}
+            className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CoachCard({ trainer, selected, recommended, onSelect, onProfile }) {
+  return (
+    <div className={`overflow-hidden rounded-2xl border bg-slate-50 dark:bg-[#171717] transition ${selected ? "border-green-500 ring-1 ring-green-500/30" : "border-slate-200 dark:border-slate-800 hover:border-orange-500/70"}`}>
+      <Photo trainer={trainer} compact />
+      <div className="p-4">
+        <div className="flex flex-wrap gap-2 mb-2">
+          {recommended && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-orange-500 text-white px-2.5 py-1 text-[11px] font-bold">
+              <Sparkles size={11} /> Recommended
+            </span>
+          )}
+          {selected && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-green-500 text-white px-2.5 py-1 text-[11px] font-bold">
+              <Check size={11} /> Selected
+            </span>
+          )}
+        </div>
+        <h3 className="text-lg font-bold truncate">{trainer.full_name}</h3>
+        <p className="text-orange-500 text-sm font-semibold mt-0.5">{trainer.goal_specialty || "General Fitness Coach"}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 line-clamp-2 min-h-[32px]">
+          {trainer.bio || "This coach has not added a profile description yet."}
+        </p>
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={() => onProfile(trainer)}
+            className="flex-1 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold hover:border-orange-500 hover:text-orange-500 transition"
+          >
+            View Profile
+          </button>
+          <button
+            onClick={() => onSelect(trainer)}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${selected ? "bg-green-500 text-white" : "bg-orange-500 hover:bg-orange-600 text-white"}`}
+          >
+            {selected ? "Selected ✓" : "Choose"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function CoachSelect() {
   const navigate = useNavigate();
   const [trainers, setTrainers] = useState([]);
+  const [goal, setGoal] = useState("General Fitness");
+  const [selectedId, setSelectedId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedId, setSelectedId] = useState(null);
-  const [goal, setGoal] = useState("General Fitness");
-  const [index, setIndex] = useState(0);
-  const [direction, setDirection] = useState(0);
-  const [touchStart, setTouchStart] = useState(null);
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     const goalData = JSON.parse(sessionStorage.getItem("avefit_goal") || "{}");
+    const savedCoach = JSON.parse(sessionStorage.getItem("avefit_trainer") || "null");
     setGoal(goalData.goal || "General Fitness");
+    if (savedCoach?.trainer_id) setSelectedId(savedCoach.trainer_id);
+
     userApi.get("/trainers")
-      .then((res) => setTrainers(res.data.data || []))
-      .catch((err) => { console.error(err); setError("Couldn't load coaches right now."); })
+      .then((res) => setTrainers(res.data?.data || []))
+      .catch(() => setError("Couldn't load coach profiles right now."))
       .finally(() => setLoading(false));
   }, []);
 
-  const ranked = useMemo(() => [...trainers].sort((a, b) => {
-    const diff = scoreTrainer(b, goal) - scoreTrainer(a, goal);
-    return diff || (a.full_name || "").localeCompare(b.full_name || "");
-  }), [trainers, goal]);
+  const ranked = useMemo(
+    () => [...trainers].sort((a, b) => scoreTrainer(b, goal) - scoreTrainer(a, goal)),
+    [trainers, goal]
+  );
 
-  const current = ranked[index];
   const recommended = ranked[0];
-  const currentScore = current ? scoreTrainer(current, goal) : 0;
-  const currentExpertise = current ? expertiseFor(current) : [];
+  const otherCoaches = ranked.slice(1);
 
-  const move = (delta) => {
-    if (!ranked.length) return;
-    setDirection(delta);
-    setIndex((i) => (i + delta + ranked.length) % ranked.length);
-  };
-
-  const handleTouchStart = (e) => setTouchStart(e.touches?.[0]?.clientX ?? null);
-  const handleTouchEnd = (e) => {
-    if (touchStart == null) return;
-    const end = e.changedTouches?.[0]?.clientX;
-    const delta = (end ?? touchStart) - touchStart;
-    if (Math.abs(delta) > 55) move(delta < 0 ? 1 : -1);
-    setTouchStart(null);
-  };
-
-  const selectCurrent = () => {
-    if (!current) return;
-    setSelectedId(current.trainer_id);
-    sessionStorage.setItem("avefit_trainer", JSON.stringify(current));
+  const chooseCoach = (trainer) => {
+    setSelectedId(trainer.trainer_id);
+    sessionStorage.setItem("avefit_trainer", JSON.stringify(trainer));
     setError("");
   };
 
   const handleContinue = () => {
-    if (!selectedId) { setError("Please choose a coach to continue."); return; }
+    if (!selectedId) {
+      setError("Please select a coach before continuing.");
+      return;
+    }
     navigate("/user/confirm");
   };
 
-  const handleSkip = () => { sessionStorage.removeItem("avefit_trainer"); navigate("/user/confirm"); };
-
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0b0b0b] text-slate-900 dark:text-white flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
-        <div className="flex items-center gap-2 mb-8">
-          {[1,2,3,4,5,6].map((step) => <div key={step} className={`flex-1 h-1.5 rounded-full ${step <= 5 ? "bg-orange-500" : "bg-slate-200 dark:bg-slate-700"}`} />)}
+    <div className="min-h-screen bg-white dark:bg-[#0b0b0b] text-slate-900 dark:text-white flex items-start justify-center p-4 sm:p-6">
+      <div className="w-full max-w-2xl py-4 sm:py-8">
+        <div className="flex items-center gap-2 mb-7">
+          {[1, 2, 3, 4, 5, 6].map((step) => (
+            <div key={step} className={`flex-1 h-1.5 rounded-full ${step <= 5 ? "bg-orange-500" : "bg-slate-200 dark:bg-slate-700"}`} />
+          ))}
         </div>
-        <div className="bg-white dark:bg-[#111] rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800">
-          <button onClick={() => navigate("/user/availability")} className="text-slate-500 hover:text-orange-500 text-sm mb-4">← Back</button>
-          <div className="flex items-start justify-between gap-4 mb-2">
-            <div><h2 className="text-2xl font-bold">Choose Your Coach</h2><p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Swipe through available coaches and find the expertise that fits your goal.</p></div>
-            <div className="rounded-full bg-orange-500/10 text-orange-500 p-2"><Heart size={18}/></div>
+
+        <div className="bg-white dark:bg-[#111] rounded-3xl p-5 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800">
+          <button onClick={() => navigate("/user/availability")} className="text-slate-500 hover:text-orange-500 text-sm mb-5">
+            ← Back
+          </button>
+
+          <div className="mb-6">
+            <p className="text-xs uppercase tracking-[0.18em] text-orange-500 font-bold mb-2">Step 5 of 6</p>
+            <h2 className="text-3xl font-bold">Choose Your Coach</h2>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-2 leading-6">
+              Based on your <b className="text-slate-700 dark:text-slate-200">{goal}</b> goal, we've found the coach who best matches your needs. You can choose any available coach.
+            </p>
           </div>
 
-          {loading ? <div className="h-[430px] bg-slate-50 dark:bg-slate-900 rounded-3xl animate-pulse mt-6" /> : !ranked.length ? (
-            <div className="text-center py-16 text-slate-500 text-sm">No active coaches are available yet.</div>
+          {loading ? (
+            <div className="space-y-4">
+              <div className="h-[430px] bg-slate-100 dark:bg-slate-900 rounded-2xl animate-pulse" />
+              <div className="h-7 w-40 bg-slate-100 dark:bg-slate-900 rounded animate-pulse" />
+            </div>
+          ) : !recommended ? (
+            <div className="text-center py-16 text-slate-500 text-sm">
+              No active coach profiles are available.
+            </div>
           ) : (
             <>
-              <div className="relative mt-6">
-                <button onClick={() => move(-1)} aria-label="Previous coach" className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-11 h-11 rounded-full bg-black text-white shadow-lg flex items-center justify-center hover:bg-orange-500 transition"><ChevronLeft/></button>
-                <button onClick={() => move(1)} aria-label="Next coach" className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-11 h-11 rounded-full bg-black text-white shadow-lg flex items-center justify-center hover:bg-orange-500 transition"><ChevronRight/></button>
-                <div key={current.trainer_id} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} className={`overflow-hidden rounded-3xl border-2 ${selectedId === current.trainer_id ? "border-orange-500" : "border-slate-200 dark:border-slate-800"} bg-slate-50 dark:bg-[#171717] shadow-lg`}>
-                  <div className="h-56 bg-black flex items-center justify-center overflow-hidden">
-                    {current.photo_url ? <img src={current.photo_url} alt={current.full_name} className="w-full h-full object-cover" /> : <User size={82} className="text-orange-500"/>}
+              <section>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-orange-500 font-bold">Your best match</p>
+                    <h3 className="text-lg font-bold mt-0.5">Recommended Coach</h3>
                   </div>
-                  <div className="p-5">
-                    {index === 0 && <span className="inline-flex items-center gap-1 rounded-full bg-orange-500 text-white px-3 py-1 text-xs font-bold mb-3"><Sparkles size={12}/> Best match for {goal}</span>}
-                    <h3 className="text-2xl font-bold">{current.full_name}</h3>
-                    <p className="text-orange-500 font-semibold mt-1">{(current.specializations || []).join(" • ") || "General Fitness Coach"}</p>
-                    {current.bio && <p className="text-sm text-slate-500 dark:text-slate-400 mt-3 leading-6">{current.bio}</p>}
-                    <div className="mt-4">
-                      <p className="text-xs uppercase tracking-wider font-bold text-slate-400 mb-2">Expertise</p>
-                      <div className="flex flex-wrap gap-2">{currentExpertise.map((item) => <span key={item} className="px-3 py-1 rounded-full bg-white dark:bg-black border border-slate-200 dark:border-slate-700 text-xs font-medium">{item}</span>)}</div>
+                  <Sparkles className="text-orange-500" size={22} />
+                </div>
+
+                <div className={`overflow-hidden rounded-2xl border-2 bg-slate-50 dark:bg-[#171717] shadow-lg ${selectedId === recommended.trainer_id ? "border-green-500" : "border-orange-500"}`}>
+                  <div className="relative">
+                    <Photo trainer={recommended} />
+                    <div className="absolute top-4 left-4 z-20 inline-flex items-center gap-1.5 rounded-full bg-orange-500 text-white px-3 py-1.5 text-xs font-bold shadow-lg">
+                      <Sparkles size={13} /> Recommended for You
                     </div>
-                    <div className="mt-4 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"><Briefcase size={14}/> Recommended match score: <b className="text-orange-500">{Math.min(100, Math.max(60, currentScore))}%</b></div>
-                    <button onClick={selectCurrent} className={`w-full mt-5 py-3 rounded-xl font-bold transition ${selectedId === current.trainer_id ? "bg-black dark:bg-white text-white dark:text-black" : "bg-orange-500 hover:bg-orange-600 text-white"}`}>
-                      {selectedId === current.trainer_id ? <span className="inline-flex items-center gap-2"><Check size={17}/> Selected Coach</span> : "Choose This Coach"}
-                    </button>
+                  </div>
+
+                  <div className="p-5 sm:p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-2xl font-bold">{recommended.full_name}</h3>
+                        <p className="text-orange-500 font-semibold mt-1">{recommended.goal_specialty || "General Fitness Coach"}</p>
+                      </div>
+                      {selectedId === recommended.trainer_id && (
+                        <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-green-500 text-white px-3 py-1.5 text-xs font-bold">
+                          <Check size={13} /> Selected
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-4">
+                      <Briefcase size={14} className="text-orange-500" />
+                      Best match for your <b className="text-slate-700 dark:text-slate-200">{goal}</b> goal
+                    </div>
+
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-4 leading-6 line-clamp-3">
+                      {recommended.bio || "This coach has not added a profile description yet."}
+                    </p>
+
+                    {expertiseFor(recommended).length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {expertiseFor(recommended).map((item) => (
+                          <span key={item} className="px-2.5 py-1 rounded-full bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 text-[11px] font-semibold">
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
+                      <button
+                        onClick={() => setProfile(recommended)}
+                        className="py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold hover:border-orange-500 hover:text-orange-500 transition"
+                      >
+                        View Full Profile
+                      </button>
+                      <button
+                        onClick={() => chooseCoach(recommended)}
+                        className={`py-3 rounded-xl font-bold transition ${selectedId === recommended.trainer_id ? "bg-green-500 text-white" : "bg-orange-500 hover:bg-orange-600 text-white"}`}
+                      >
+                        {selectedId === recommended.trainer_id ? "Coach Selected ✓" : "Choose This Coach"}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex justify-center gap-1.5 mt-4">{ranked.map((t, i) => <button key={t.trainer_id} onClick={() => setIndex(i)} aria-label={`Show ${t.full_name}`} className={`h-2 rounded-full transition-all ${i === index ? "w-7 bg-orange-500" : "w-2 bg-slate-300 dark:bg-slate-700"}`} />)}</div>
-              <p className="text-center text-xs text-slate-400 mt-2">Coach {index + 1} of {ranked.length}{direction ? " · use the arrows to browse" : " · swipe-style browsing"}</p>
-              <div className="mt-5 rounded-2xl border border-orange-200 dark:border-orange-900/50 bg-orange-500/5 p-4"><p className="text-xs font-bold text-orange-500 flex items-center gap-2"><Sparkles size={14}/> Our recommendation</p><p className="text-sm mt-1 text-slate-600 dark:text-slate-300">{recommended.full_name} is the strongest match for <b>{goal}</b> based on the coach's listed specialty and expertise.</p></div>
+              </section>
+
+              {otherCoaches.length > 0 && (
+                <section className="mt-8">
+                  <div className="mb-4">
+                    <p className="text-xs uppercase tracking-wider text-slate-400 font-bold">Your options</p>
+                    <h3 className="text-lg font-bold mt-0.5">Other Available Coaches</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {otherCoaches.map((trainer) => (
+                      <CoachCard
+                        key={trainer.trainer_id}
+                        trainer={trainer}
+                        selected={selectedId === trainer.trainer_id}
+                        recommended={false}
+                        onSelect={chooseCoach}
+                        onProfile={setProfile}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
             </>
           )}
+
           {error && <p className="text-red-500 text-xs mt-4">{error}</p>}
-          <button onClick={handleContinue} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition mt-5">Continue to Confirmation →</button>
-          {ranked.length > 0 && <button onClick={handleSkip} className="w-full text-slate-500 hover:text-orange-500 text-xs py-3 transition">Skip for now, assign me a coach later</button>}
+
+          <button
+            onClick={handleContinue}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 rounded-xl transition mt-7 shadow-lg shadow-orange-500/10"
+          >
+            Continue to Confirmation →
+          </button>
+          <p className="text-center text-xs text-slate-400 mt-3">
+            You can review your selected coach before completing setup.
+          </p>
         </div>
       </div>
+
+      {profile && (
+        <ProfileModal
+          trainer={profile}
+          onClose={() => setProfile(null)}
+          onSelect={chooseCoach}
+          selected={selectedId === profile.trainer_id}
+        />
+      )}
     </div>
   );
 }

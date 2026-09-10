@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
-require("./db");
+const { initializeDatabase } = require("./db");
 
 // Admin routes
 const adminRoutes = require("./routes/adminRoutes");
@@ -41,4 +41,14 @@ app.use("/api/user/exercises", userExerciseRoutes);
 app.use("/api/user/exercise-categories", userExerciseRoutes);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+
+// Finish required database setup before accepting API requests. This prevents
+// registration from failing when the approval migration has not been run yet.
+initializeDatabase()
+  .then(() => {
+    app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+  })
+  .catch((err) => {
+    console.error("❌ Server startup aborted because database setup failed:", err.message);
+    process.exit(1);
+  });

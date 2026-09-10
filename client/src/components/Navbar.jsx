@@ -30,18 +30,18 @@ export default function Navbar() {
   }, [location.pathname]);
 
   return (
-    <header className="bg-black border-b border-slate-900 px-8 py-4 flex items-center justify-between">
+    <header className="ave-topbar sticky top-0 z-40 backdrop-blur-xl border-b px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
       <div>
-        <h2 className="text-2xl font-bold text-white">{pageTitle}</h2>
+        <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">{pageTitle}</h2>
       </div>
-      <div className="hidden md:flex items-center bg-slate-800 rounded-lg px-3 py-2 w-80">
+      <div className="ave-search hidden md:flex items-center border rounded-xl px-3 py-2.5 w-72 lg:w-80">
         <Search size={18} className="text-slate-400" />
-        <input type="text" placeholder="Search..." className="bg-transparent outline-none ml-2 w-full text-sm text-white placeholder-slate-500" />
+        <input type="text" placeholder="Search..." className="bg-transparent outline-none ml-2 w-full text-sm placeholder-slate-500 border-0 focus:ring-0" />
       </div>
       <div className="flex items-center gap-4">
         <ThemeToggle />
-        <button onClick={() => navigate("/admin/notifications")} className="relative hover:bg-slate-800 p-2 rounded-lg transition">
-          <Bell size={22} className="text-slate-300" />
+        <button onClick={() => navigate("/admin/notifications")} className="relative hover:bg-white/10 p-2.5 rounded-xl transition">
+          <Bell size={22} className="text-slate-600 dark:text-slate-300" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
               {unreadCount > 9 ? "9+" : unreadCount}
@@ -55,7 +55,7 @@ export default function Navbar() {
             <UserCircle size={32} className="text-slate-400" />
           )}
           <div>
-            <p className="font-semibold text-white text-sm">{admin.name || "Administrator"}</p>
+            <p className="font-semibold text-slate-900 dark:text-white text-sm">{admin.name || "Administrator"}</p>
             <p className="text-xs text-slate-500">Administrator</p>
           </div>
         </div>

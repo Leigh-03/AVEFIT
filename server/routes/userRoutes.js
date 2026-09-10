@@ -31,7 +31,7 @@ router.post("/progress/predict", verifyUser, calculatePrediction);
 router.post("/progress/auto-predict", verifyUser, autoPredict);
 
 // Coaches (member-facing)
-router.get("/trainers", verifyUser, getActiveTrainers);
+router.get("/trainers", getActiveTrainers);
 
 // Notifications
 router.get("/notifications", verifyUser, getUserNotifications);

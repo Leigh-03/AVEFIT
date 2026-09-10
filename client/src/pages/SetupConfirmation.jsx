@@ -68,7 +68,7 @@ export default function SetupConfirmation() {
         activity_level: healthData.experience || "Beginner",
         target_weight: goalData.targetWeight || null,
         workout_days_per_week: availability.daysPerWeek ? parseInt(availability.daysPerWeek) : null,
-        workout_duration: availability.duration || null,
+        workout_duration: availability.duration ? parseInt(String(availability.duration), 10) : null,
         preferred_days: availability.days || [],
         intensity: healthData.intensity || null,
         injuries: healthData.injuries || [],
@@ -153,7 +153,7 @@ export default function SetupConfirmation() {
               {/* Coach */}
               <div className="bg-slate-50 rounded-2xl p-4 mb-4">
                 <h3 className="text-sm font-semibold text-slate-600 mb-2">Coach</h3>
-                <Row label="Assigned Coach" value={trainer?.full_name || "Not selected"} />
+                <Row label="Selected Coach" value={trainer?.full_name || "Not selected"} />
               </div>
 
               {/* Predictive Analytics */}

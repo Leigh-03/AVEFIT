@@ -11,16 +11,21 @@ export default function TrainerLogin() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [pendingNotice, setPendingNotice] = useState(false);
 
   const handleLogin = async () => {
     if (!form.email || !form.password) { setError("Please fill in all fields."); return; }
-    setLoading(true); setError("");
+    setLoading(true); setError(""); setPendingNotice(false);
     try {
       const res = await trainerApi.post("/login", form);
       loginTrainer(res.data.trainer, res.data.token);
       navigate("/trainer/roster");
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed.");
+      if (err.response?.status === 403 && err.response?.data?.status === "Pending") {
+        setPendingNotice(true);
+      } else {
+        setError(err.response?.data?.message || "Login failed.");
+      }
     } finally {
       setLoading(false);
     }
@@ -70,6 +75,12 @@ export default function TrainerLogin() {
               </div>
             </div>
 
+            {pendingNotice && (
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 text-center">
+                <p className="text-yellow-300 font-semibold">Trainer Account Pending Approval</p>
+                <p className="text-slate-400 text-sm mt-1">Please wait 1-3 working days while the gym administrator reviews your account.</p>
+              </div>
+            )}
             {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
             <button

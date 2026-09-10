@@ -16,9 +16,9 @@ export default function AboutUs() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 pb-24">
+    <div className="min-h-screen bg-[#fffaf5] dark:bg-[#080808] text-slate-900 dark:text-white pb-24">
       {/* Header */}
-      <div className="bg-black px-6 pt-12 pb-8 text-center">
+      <div className="ave-page-hero px-6 pt-10 pb-8 text-center border-b border-orange-100 dark:border-white/5">
         <h1 className="text-3xl font-bold text-orange-500">AveFit</h1>
         <p className="text-slate-400 mt-2">Avenue Power and Fitness Gym</p>
         <div className="flex justify-center gap-1 mt-3">

@@ -3,22 +3,30 @@ const pool = require("../db");
 // GET dashboard summary stats
 const getDashboardStats = async (req, res) => {
   try {
-    const totalMembers = await pool.query("SELECT COUNT(*) AS count FROM members");
-    const activeMembers = await pool.query("SELECT COUNT(*) AS count FROM members WHERE status = 'Active'");
-    const pendingMembers = await pool.query("SELECT COUNT(*) AS count FROM members WHERE status = 'Pending'");
+    const totalMembers = await pool.query("SELECT COUNT(*) AS count FROM users WHERE LOWER(COALESCE(account_status, 'pending')) = 'active'");
+    const pendingMembers = await pool.query(`
+      SELECT COUNT(*) AS count FROM users
+      WHERE LOWER(COALESCE(account_status, 'pending')) = 'pending' 
+    `);
     const totalExercises = await pool.query("SELECT COUNT(*) AS count FROM exercises");
     const totalMealPlans = await pool.query("SELECT COUNT(*) AS count FROM meal_plans");
 
     const recentMembers = await pool.query(`
-      SELECT member_id, full_name, status, joined_date
-      FROM members ORDER BY joined_date DESC LIMIT 5
+      SELECT
+        user_id AS member_id,
+        first_name,
+        last_name,
+        INITCAP(LOWER(COALESCE(account_status, 'pending'))) AS status,
+        created_at AS joined_date
+      FROM users
+      ORDER BY created_at DESC NULLS LAST, user_id DESC
+      LIMIT 5
     `);
 
     res.json({
       success: true,
       data: {
         totalMembers: parseInt(totalMembers.rows[0].count),
-        activeMembers: parseInt(activeMembers.rows[0].count),
         pendingMembers: parseInt(pendingMembers.rows[0].count),
         totalExercises: parseInt(totalExercises.rows[0].count),
         totalMealPlans: parseInt(totalMealPlans.rows[0].count),
@@ -37,19 +45,21 @@ const getAnalytics = async (req, res) => {
     // Member growth last 6 months
     const memberGrowth = await pool.query(`
       SELECT
-        TO_CHAR(DATE_TRUNC('month', joined_date), 'Mon') AS month,
+        TO_CHAR(DATE_TRUNC('month', created_at), 'Mon') AS month,
         COUNT(*) AS count
-      FROM members
-      WHERE joined_date >= NOW() - INTERVAL '6 months'
-      GROUP BY DATE_TRUNC('month', joined_date)
-      ORDER BY DATE_TRUNC('month', joined_date) ASC
+      FROM users
+      WHERE LOWER(COALESCE(account_status, 'pending')) = 'active'
+        AND created_at >= NOW() - INTERVAL '6 months'
+      GROUP BY DATE_TRUNC('month', created_at)
+      ORDER BY DATE_TRUNC('month', created_at) ASC
     `);
 
     // Fitness goal distribution
     const goalDistribution = await pool.query(`
       SELECT fitness_goal AS goal, COUNT(*) AS count
-      FROM members
-      WHERE fitness_goal IS NOT NULL
+      FROM users
+      WHERE LOWER(COALESCE(account_status, 'pending')) = 'active'
+        AND fitness_goal IS NOT NULL
       GROUP BY fitness_goal ORDER BY count DESC
     `);
 
@@ -57,13 +67,15 @@ const getAnalytics = async (req, res) => {
     const bmiDistribution = await pool.query(`
       SELECT
         CASE
-          WHEN bmi < 18.5 THEN 'Underweight'
-          WHEN bmi BETWEEN 18.5 AND 24.9 THEN 'Normal'
-          WHEN bmi BETWEEN 25 AND 29.9 THEN 'Overweight'
+          WHEN (weight / POWER(height / 100.0, 2)) < 18.5 THEN 'Underweight'
+          WHEN (weight / POWER(height / 100.0, 2)) BETWEEN 18.5 AND 24.9 THEN 'Normal'
+          WHEN (weight / POWER(height / 100.0, 2)) BETWEEN 25 AND 29.9 THEN 'Overweight'
           ELSE 'Obese'
         END AS category,
         COUNT(*) AS count
-      FROM members WHERE bmi IS NOT NULL
+      FROM users
+      WHERE LOWER(COALESCE(account_status, 'pending')) = 'active'
+        AND height IS NOT NULL AND height > 0 AND weight IS NOT NULL
       GROUP BY category
     `);
 
@@ -83,8 +95,13 @@ const getAnalytics = async (req, res) => {
     `);
 
     // Summary
-    const totalMembers = await pool.query("SELECT COUNT(*) AS count FROM members");
-    const avgBmi = await pool.query("SELECT ROUND(AVG(bmi)::numeric,1) AS avg FROM members WHERE bmi IS NOT NULL");
+    const totalMembers = await pool.query("SELECT COUNT(*) AS count FROM users WHERE LOWER(COALESCE(account_status, 'pending')) = 'active'");
+    const avgBmi = await pool.query(`
+      SELECT ROUND(AVG(weight / POWER(height / 100.0, 2))::numeric,1) AS avg
+      FROM users
+      WHERE LOWER(COALESCE(account_status, 'pending')) = 'active'
+        AND height IS NOT NULL AND height > 0 AND weight IS NOT NULL
+    `);
     const totalWorkoutPlans = await pool.query("SELECT COUNT(*) AS count FROM workout_plans");
     const totalMealPlans = await pool.query("SELECT COUNT(*) AS count FROM meal_plans");
 

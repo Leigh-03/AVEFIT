@@ -52,9 +52,8 @@ export default function Homepage() {
         </div>
 
         {/* Stats */}
-        <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-4 px-8 pb-16 max-w-4xl mx-auto w-full">
+        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-4 px-8 pb-16 max-w-4xl mx-auto w-full">
           {[
-            { icon: <Users size={24} />, value: "500+", label: "Active Members" },
             { icon: <Dumbbell size={24} />, value: "100+", label: "Workout Plans" },
             { icon: <TrendingUp size={24} />, value: "95%", label: "Goal Achievement" },
             { icon: <Award size={24} />, value: "5★", label: "Member Rating" },

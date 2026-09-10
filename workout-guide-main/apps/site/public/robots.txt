@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://bryllim.github.io/workout-guide/sitemap-index.xml

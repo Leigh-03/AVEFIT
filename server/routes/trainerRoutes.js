@@ -3,7 +3,7 @@ const router = express.Router();
 const verifyToken = require("../middleware/authMiddleware");
 const verifyTrainer = require("../middleware/trainerAuthMiddleware");
 const {
-  getTrainers, getTrainerById, createTrainer, updateTrainer, deactivateTrainer, getTrainerRoster,
+  getTrainers, getTrainerById, createTrainer, updateTrainer, approveTrainer, rejectTrainer, deactivateTrainer, getTrainerRoster,
   loginTrainer, getMyRoster, getMyProfile, updateMyPhoto, getExerciseCatalog,
   getRosterMemberSessions, assignSessionAsTrainer, deleteSessionAsTrainer,
 } = require("../controllers/trainerController");
@@ -24,6 +24,8 @@ router.get("/:id/roster", verifyToken, getTrainerRoster);
 router.get("/:id", verifyToken, getTrainerById);
 router.post("/", verifyToken, createTrainer);
 router.put("/:id", verifyToken, updateTrainer);
+router.put("/:id/approve", verifyToken, approveTrainer);
+router.put("/:id/reject", verifyToken, rejectTrainer);
 router.put("/:id/deactivate", verifyToken, deactivateTrainer);
 
 module.exports = router;

@@ -4,54 +4,264 @@
 :root {
   --ave-orange: #f97316;
   --ave-orange-dark: #ea580c;
-  --ave-black: #0b0b0b;
+  --ave-orange-soft: #fff7ed;
+  --ave-orange-muted: #ffedd5;
+  --ave-black: #080808;
+  --ave-black-soft: #111111;
   --ave-white: #ffffff;
+  --ave-bg: #fffaf5;
+  --ave-border: #f1e4d7;
+  --ave-text: #171717;
+  --ave-muted: #737373;
+  --ave-radius: 18px;
+  --ave-shadow: 0 10px 30px rgba(15, 23, 42, .07);
+  --ave-shadow-hover: 0 16px 38px rgba(15, 23, 42, .12);
 }
 
 html, body, #root { width: 100%; min-height: 100%; margin: 0; padding: 0; }
-
 html { background: var(--ave-white); }
-html.dark { background: #0b0b0b; }
+html.dark { background: var(--ave-black); }
 
 body {
-  background: #ffffff;
-  color: #111827;
-  font-family: Inter, sans-serif;
+  background: var(--ave-bg);
+  color: var(--ave-text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
   transition: background-color .25s ease, color .25s ease;
 }
 
-body.dark { background: #0b0b0b; }
 * { box-sizing: border-box; }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+::selection { background: var(--ave-orange-muted); color: #111; }
 
-/* AveFit brand: white + orange + black. Keep existing utility classes usable while
-   making the application consistently readable in dark mode. */
+/* ==============================
+   AveFit design system
+   Light: white + warm orange
+   Dark: black + orange
+   ============================== */
+.dark body { background: var(--ave-black); color: #f5f5f5; }
+
+/* Softer, more premium Tailwind surfaces */
+.bg-white { background-color: #ffffff; }
+.bg-slate-50 { background-color: #fffaf5; }
+.bg-slate-100 { background-color: #fff4e8; }
+.bg-slate-200 { background-color: #f5e9dc; }
+.border-slate-100 { border-color: #f5e9dc; }
+.border-slate-200 { border-color: var(--ave-border); }
+.border-slate-300 { border-color: #e8d7c6; }
+.text-slate-900 { color: #171717; }
+.text-slate-800 { color: #262626; }
+.text-slate-700 { color: #404040; }
+.text-slate-600 { color: #525252; }
+.text-slate-500 { color: #737373; }
+
+/* Dark surfaces */
 .dark .bg-white { background-color: #111111 !important; }
-.dark .bg-slate-50 { background-color: #161616 !important; }
-.dark .bg-slate-100 { background-color: #1d1d1d !important; }
-.dark .bg-slate-200 { background-color: #272727 !important; }
-.dark .text-slate-900 { color: #f8fafc !important; }
-.dark .text-slate-800 { color: #f1f5f9 !important; }
-.dark .text-slate-700 { color: #e2e8f0 !important; }
-.dark .text-slate-600 { color: #cbd5e1 !important; }
-.dark .text-slate-500 { color: #94a3b8 !important; }
-.dark .border-slate-200 { border-color: #2d2d2d !important; }
-.dark .border-slate-300 { border-color: #3a3a3a !important; }
+.dark .bg-slate-50 { background-color: #151515 !important; }
+.dark .bg-slate-100 { background-color: #1b1b1b !important; }
+.dark .bg-slate-200 { background-color: #242424 !important; }
+.dark .text-slate-900 { color: #fafafa !important; }
+.dark .text-slate-800 { color: #f5f5f5 !important; }
+.dark .text-slate-700 { color: #e5e5e5 !important; }
+.dark .text-slate-600 { color: #cfcfcf !important; }
+.dark .text-slate-500 { color: #a3a3a3 !important; }
+.dark .text-slate-400 { color: #a3a3a3 !important; }
+.dark .text-slate-300 { color: #d4d4d4 !important; }
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-300 { border-color: #2b2b2b !important; }
 .dark .hover\:bg-slate-50:hover { background-color: #1d1d1d !important; }
 .dark .hover\:bg-white:hover { background-color: #1b1b1b !important; }
 .dark input, .dark select, .dark textarea {
-  color: #f8fafc;
+  color: #fafafa;
   background-color: #111111;
   border-color: #333333;
 }
-.dark input::placeholder, .dark textarea::placeholder { color: #64748b; }
+.dark input::placeholder, .dark textarea::placeholder { color: #737373; }
 
-/* Convert the few remaining blue brand utilities to AveFit orange. */
-.text-blue-400, .text-blue-500, .text-blue-600, .text-blue-700 { color: var(--ave-orange) !important; }
-.bg-blue-500, .bg-blue-600, .bg-blue-700 { background-color: var(--ave-orange) !important; }
-.bg-blue-100 { background-color: #ffedd5 !important; }
+/* Orange is the single interactive accent */
+.text-orange-400, .text-orange-500, .text-orange-600, .text-orange-700,
+.text-blue-400, .text-blue-500, .text-blue-600, .text-blue-700 {
+  color: var(--ave-orange) !important;
+}
+.bg-orange-400, .bg-orange-500, .bg-orange-600, .bg-orange-700,
+.bg-blue-500, .bg-blue-600, .bg-blue-700 {
+  background-color: var(--ave-orange) !important;
+}
+.bg-orange-50, .bg-orange-100, .bg-blue-100 { background-color: var(--ave-orange-muted) !important; }
+.border-orange-400, .border-orange-500, .border-orange-600,
 .border-blue-400, .border-blue-500, .border-blue-600 { border-color: var(--ave-orange) !important; }
+.hover\:bg-orange-600:hover, .hover\:bg-orange-700:hover,
+.hover\:bg-blue-600:hover, .hover\:bg-blue-700:hover { background-color: var(--ave-orange-dark) !important; }
+
+/* Cards: modern glassy surface, subtle depth, no heavy outlines */
+.bg-white.rounded-xl, .bg-white.rounded-2xl, .bg-white.rounded-3xl,
+.bg-slate-50.rounded-xl, .bg-slate-50.rounded-2xl,
+.bg-slate-100.rounded-xl, .bg-slate-100.rounded-2xl {
+  border-color: var(--ave-border);
+  box-shadow: var(--ave-shadow);
+}
+.dark .bg-white.rounded-xl, .dark .bg-white.rounded-2xl, .dark .bg-white.rounded-3xl,
+.dark .bg-slate-50.rounded-xl, .dark .bg-slate-50.rounded-2xl,
+.dark .bg-slate-100.rounded-xl, .dark .bg-slate-100.rounded-2xl {
+  border-color: #282828 !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.25);
+}
+
+/* Inputs */
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+  border-radius: 12px;
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:focus {
+  border-color: var(--ave-orange) !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, .14) !important;
+  outline: none;
+}
+
+/* Buttons feel tactile and consistent */
+button.bg-orange-500, button.bg-orange-600,
+a.bg-orange-500, a.bg-orange-600 {
+  box-shadow: 0 7px 18px rgba(249,115,22,.20);
+}
+button.bg-orange-500:hover, button.bg-orange-600:hover,
+a.bg-orange-500:hover, a.bg-orange-600:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(249,115,22,.27);
+}
+
+/* Tables */
+table { border-collapse: separate; border-spacing: 0; }
+thead th { font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: #737373; }
+tbody tr { transition: background-color .18s ease; }
+tbody tr:hover { background: #fff7ed; }
+.dark tbody tr:hover { background: #191919; }
+
+/* Scrollbars */
+* { scrollbar-width: thin; scrollbar-color: #d6c5b5 transparent; }
+.dark * { scrollbar-color: #3b3b3b transparent; }
 
 @layer base {
-  input, select, textarea { color: #0f172a; }
-  .dark input, .dark select, .dark textarea { color: #f8fafc; }
+  input, select, textarea { color: #171717; }
+  .dark input, .dark select, .dark textarea { color: #fafafa; }
 }
+
+
+/* =========================================
+   AveFit portal surfaces
+   Light mode: warm white + orange
+   Dark mode: black + orange
+   ========================================= */
+.ave-portal-shell {
+  background: #fffaf5;
+  color: #171717;
+}
+.dark .ave-portal-shell {
+  background: #080808;
+  color: #f5f5f5;
+}
+
+.ave-sidebar {
+  background: #ffffff;
+  border-color: #f0e1d3;
+  color: #171717;
+}
+.dark .ave-sidebar {
+  background: #080808;
+  border-color: #262626;
+  color: #f5f5f5;
+}
+
+.ave-brand-subtitle { color: #9a8b7d; }
+.dark .ave-brand-subtitle { color: #737373; }
+.ave-nav-item { color: #62584f; }
+.ave-nav-item:hover { background: #fff4e8; color: #171717; }
+.dark .ave-nav-item { color: #a3a3a3; }
+.dark .ave-nav-item:hover { background: #171717; color: #fff; }
+.ave-nav-item.active { background: #f97316; color: #fff; box-shadow: 0 10px 24px rgba(249,115,22,.18); }
+
+.ave-topbar {
+  background: rgba(255,255,255,.92);
+  border-color: #f0e1d3;
+}
+.dark .ave-topbar {
+  background: rgba(8,8,8,.94);
+  border-color: #262626;
+}
+.ave-search {
+  background: #fffaf5;
+  border-color: #ead9ca;
+  color: #171717;
+}
+.dark .ave-search {
+  background: #111;
+  border-color: #2d2d2d;
+  color: #fff;
+}
+.ave-search input { color: #171717 !important; }
+.dark .ave-search input { color: #fff !important; }
+
+.ave-user-surface {
+  background: #fff;
+  border-color: #f0e1d3;
+}
+.dark .ave-user-surface {
+  background: #111;
+  border-color: #2a2a2a;
+}
+
+/* Content panels used by the trainer portal. */
+.trainer-card {
+  background: #fff;
+  border-color: #ead9ca;
+  color: #171717;
+  box-shadow: 0 10px 30px rgba(80,45,20,.06);
+}
+.dark .trainer-card {
+  background: #111;
+  border-color: #2b2b2b;
+  color: #f5f5f5;
+  box-shadow: 0 14px 34px rgba(0,0,0,.28);
+}
+.trainer-muted { color: #786e66; }
+.dark .trainer-muted { color: #a3a3a3; }
+.trainer-field {
+  background: #fffaf5 !important;
+  border-color: #ead9ca !important;
+  color: #171717 !important;
+}
+.dark .trainer-field {
+  background: #171717 !important;
+  border-color: #363636 !important;
+  color: #fff !important;
+}
+.trainer-soft { background: #fff7ed; }
+.dark .trainer-soft { background: #1b1b1b; }
+
+/* Large page headers: no giant black blocks in light mode. */
+.ave-page-hero {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffffff 58%, #fffaf5 100%);
+  color: #171717;
+}
+.dark .ave-page-hero {
+  background: linear-gradient(135deg, #050505 0%, #0c0c0c 100%);
+  color: #fff;
+}
+.ave-page-hero .hero-muted { color: #806f61; }
+.dark .ave-page-hero .hero-muted { color: #a3a3a3; }
+
+.ave-mobile-nav {
+  background: rgba(255,255,255,.96);
+  border-color: #ead9ca;
+}
+.dark .ave-mobile-nav {
+  background: rgba(8,8,8,.96);
+  border-color: #292929;
+}
+
+/* Avoid accidental pure-black page backgrounds in light user/trainer portals. */
+.user-portal .portal-content,
+.trainer-portal .portal-content { background: #fffaf5; }
+.dark .user-portal .portal-content,
+.dark .trainer-portal .portal-content { background: #080808; }

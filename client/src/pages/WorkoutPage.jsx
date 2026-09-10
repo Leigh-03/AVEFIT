@@ -56,19 +56,19 @@ export default function WorkoutPage() {
   const completedCount = sessions.filter((s) => s.completed).length;
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-[#fffaf5] dark:bg-[#080808] text-slate-900 dark:text-white">
       {/* Header */}
-      <div className="bg-black px-6 pt-12 pb-6">
-        <p className="text-slate-400 text-sm">Welcome back,</p>
-        <h1 className="text-2xl font-bold text-white">{user?.first_name || "Athlete"} 👋</h1>
+      <div className="ave-page-hero px-6 pt-10 pb-7 border-b border-orange-100 dark:border-white/5">
+        <p className="hero-muted text-sm">Welcome back,</p>
+        <h1 className="text-2xl font-black text-slate-900 dark:text-white">{user?.first_name || "Athlete"} 👋</h1>
 
         {/* Progress bar */}
-        <div className="mt-4 bg-white rounded-2xl p-4">
+        <div className="mt-4 bg-white dark:bg-[#111] rounded-2xl p-4 border border-orange-100 dark:border-white/5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-slate-500">Weekly Progress</span>
             <span className="text-sm font-bold text-orange-500">{completedCount}/{sessions.length} done</span>
           </div>
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div className="h-2 bg-orange-50 dark:bg-white/10 rounded-full overflow-hidden">
             <div
               className="h-full bg-orange-500 rounded-full transition-all"
               style={{ width: sessions.length > 0 ? `${(completedCount / sessions.length) * 100}%` : "0%" }}
@@ -78,7 +78,7 @@ export default function WorkoutPage() {
       </div>
 
       {/* Day Selector */}
-      <div className="px-4 py-3 overflow-x-auto">
+      <div className="px-4 py-4 overflow-x-auto">
         <div className="flex gap-2 w-max">
           {DAYS.map((day) => {
             const hasWorkout = sessions.some((s) => s.session_date === day || s.day_of_week === day);

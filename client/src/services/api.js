@@ -20,6 +20,7 @@ export const getMembers = () => api.get("/members");
 export const getMemberById = (id) => api.get(`/members/${id}`);
 export const approveMember = (id) => api.put(`/members/${id}/approve`);
 export const rejectMember = (id) => api.put(`/members/${id}/reject`);
+export const assignMemberTrainer = (id, trainer_id) => api.put(`/members/${id}/trainer`, { trainer_id });
 
 // Workouts
 export const getWorkoutPlans = () => api.get("/workouts");
