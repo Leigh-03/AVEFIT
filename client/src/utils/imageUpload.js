@@ -3,12 +3,13 @@
 // without needing separate file storage/hosting.
 export function fileToCompressedDataUrl(file, { maxSize = 400, quality = 0.85 } = {}) {
   return new Promise((resolve, reject) => {
-    if (!file.type.startsWith("image/")) {
-      reject(new Error("Please choose an image file."));
+    const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+    if (!allowedTypes.has(file.type)) {
+      reject(new Error("Only JPEG, PNG, or WebP images are allowed."));
       return;
     }
-    if (file.size > 8 * 1024 * 1024) {
-      reject(new Error("Image is too large (max 8MB)."));
+    if (file.size > 2 * 1024 * 1024) {
+      reject(new Error("Image is too large (max 2MB)."));
       return;
     }
 

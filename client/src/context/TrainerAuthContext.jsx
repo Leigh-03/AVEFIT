@@ -8,11 +8,17 @@ export function TrainerAuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("avefit_trainer_token");
+    let savedToken = sessionStorage.getItem("avefit_trainer_token");
+    const legacyToken = localStorage.getItem("avefit_trainer_token");
+    if (!savedToken && legacyToken) {
+      savedToken = legacyToken;
+      sessionStorage.setItem("avefit_trainer_token", legacyToken);
+      sessionStorage.removeItem("avefit_trainer_token");
+    }
     const savedTrainer = localStorage.getItem("avefit_trainer");
     if (savedToken && savedTrainer) {
-      setToken(savedToken);
-      setTrainer(JSON.parse(savedTrainer));
+      try { setToken(savedToken); setTrainer(JSON.parse(savedTrainer)); }
+      catch { sessionStorage.removeItem("avefit_trainer_token"); localStorage.removeItem("avefit_trainer"); }
     }
     setLoading(false);
   }, []);
@@ -20,14 +26,14 @@ export function TrainerAuthProvider({ children }) {
   const loginTrainer = (trainerData, trainerToken) => {
     setTrainer(trainerData);
     setToken(trainerToken);
-    localStorage.setItem("avefit_trainer_token", trainerToken);
+    sessionStorage.setItem("avefit_trainer_token", trainerToken);
     localStorage.setItem("avefit_trainer", JSON.stringify(trainerData));
   };
 
   const logoutTrainer = () => {
     setTrainer(null);
     setToken(null);
-    localStorage.removeItem("avefit_trainer_token");
+    sessionStorage.removeItem("avefit_trainer_token");
     localStorage.removeItem("avefit_trainer");
   };
 

@@ -6,7 +6,7 @@ const API_URL = "http://localhost:5000/api";
 const api = axios.create({ baseURL: API_URL });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("avefit_token");
+  const token = sessionStorage.getItem("avefit_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -30,3 +30,14 @@ export const createWorkoutPlan = (data) => api.post("/workouts", data);
 export const getNutritionPlans = () => api.get("/nutrition");
 
 export default api;
+
+// Expired/revoked sessions are removed immediately so the next protected
+// navigation cannot keep using a stale credential.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    if (status === 401 || status === 403) sessionStorage.removeItem("avefit_token");
+    return Promise.reject(error);
+  }
+);

@@ -10,7 +10,6 @@ export default function UserLogin() {
   const { loginUser } = useUserAuth();
   const [mode, setMode] = useState("login");
   const [showPass, setShowPass] = useState(false);
-  const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [pendingNotice, setPendingNotice] = useState(false);
@@ -163,16 +162,7 @@ export default function UserLogin() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 text-slate-500 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={remember}
-                    onChange={(e) => setRemember(e.target.checked)}
-                    className="rounded"
-                  />
-                  Remember me
-                </label>
+              <div className="flex justify-end text-sm">
                 <button type="button" className="text-orange-500 hover:underline">
                   Forgot Password?
                 </button>

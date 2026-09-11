@@ -81,7 +81,7 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       await userApi.put("/profile", form);
-      loginUser({ ...user, first_name: form.first_name, last_name: form.last_name }, localStorage.getItem("avefit_user_token"));
+      loginUser({ ...user, first_name: form.first_name, last_name: form.last_name }, sessionStorage.getItem("avefit_user_token"));
       setMsg("Profile saved!");
     } catch (err) {
       setMsg("Failed to save.");

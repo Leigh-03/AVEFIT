@@ -8,11 +8,19 @@ export function UserAuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("avefit_user_token");
+    // JWTs are session credentials; keep them out of persistent localStorage.
+    // Migrate older AveFit builds once, then remove the persistent token.
+    let savedToken = sessionStorage.getItem("avefit_user_token");
+    const legacyToken = localStorage.getItem("avefit_user_token");
+    if (!savedToken && legacyToken) {
+      savedToken = legacyToken;
+      sessionStorage.setItem("avefit_user_token", legacyToken);
+      sessionStorage.removeItem("avefit_user_token");
+    }
     const savedUser = localStorage.getItem("avefit_user");
     if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      try { setToken(savedToken); setUser(JSON.parse(savedUser)); }
+      catch { sessionStorage.removeItem("avefit_user_token"); localStorage.removeItem("avefit_user"); }
     }
     setLoading(false);
   }, []);
@@ -20,7 +28,7 @@ export function UserAuthProvider({ children }) {
   const loginUser = (userData, userToken) => {
     setUser(userData);
     setToken(userToken);
-    localStorage.setItem("avefit_user_token", userToken);
+    sessionStorage.setItem("avefit_user_token", userToken);
     localStorage.setItem("avefit_user", JSON.stringify(userData));
   };
 
@@ -36,7 +44,7 @@ export function UserAuthProvider({ children }) {
   const logoutUser = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("avefit_user_token");
+    sessionStorage.removeItem("avefit_user_token");
     localStorage.removeItem("avefit_user");
   };
 

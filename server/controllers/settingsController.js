@@ -1,5 +1,6 @@
 const pool = require("../db");
 const bcrypt = require("bcrypt");
+const { validatePassword, validateImageDataUrl } = require("../utils/security");
 
 // GET admin profile
 const getProfile = async (req, res) => {
@@ -36,9 +37,9 @@ const updateProfile = async (req, res) => {
 const updatePhoto = async (req, res) => {
   try {
     const { photo_url } = req.body;
-    if (!photo_url) {
-      return res.status(400).json({ success: false, message: "photo_url is required." });
-    }
+    if (!photo_url) return res.status(400).json({ success: false, message: "photo_url is required." });
+    const imageCheck = validateImageDataUrl(photo_url);
+    if (!imageCheck.ok) return res.status(400).json({ success: false, message: imageCheck.message });
     await pool.query(
       "UPDATE admins SET photo_url=$1, updated_at=NOW() WHERE admin_id=$2",
       [photo_url, req.admin.admin_id]
@@ -54,6 +55,7 @@ const updatePhoto = async (req, res) => {
 const updatePassword = async (req, res) => {
   try {
     const { current_password, new_password } = req.body;
+    if (!current_password || !validatePassword(new_password)) return res.status(400).json({ success: false, message: "New password must be 10-72 characters and include letters, numbers, and a special character." });
 
     const result = await pool.query(
       "SELECT password FROM admins WHERE admin_id = $1",
@@ -64,9 +66,9 @@ const updatePassword = async (req, res) => {
     if (!valid)
       return res.status(401).json({ success: false, message: "Current password is incorrect." });
 
-    const hashed = await bcrypt.hash(new_password, 10);
+    const hashed = await bcrypt.hash(new_password, 12);
     await pool.query(
-      "UPDATE admins SET password=$1, updated_at=NOW() WHERE admin_id=$2",
+      "UPDATE admins SET password=$1, token_version=token_version+1, updated_at=NOW() WHERE admin_id=$2",
       [hashed, req.admin.admin_id]
     );
 

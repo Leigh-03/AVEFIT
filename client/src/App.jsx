@@ -41,21 +41,25 @@ import TrainerDashboard from "./pages/TrainerDashboard";
 import TrainerProfile from "./pages/TrainerProfile";
 
 function AdminProtectedRoute({ children }) {
-  const token = localStorage.getItem("avefit_token");
+  const token = sessionStorage.getItem("avefit_token");
   if (!token) return <Navigate to="/login" replace />;
   return children;
 }
 
 function UserProtectedRoute({ children }) {
-  const token = localStorage.getItem("avefit_user_token");
+  const token = sessionStorage.getItem("avefit_user_token");
   if (!token) return <Navigate to="/user/login" replace />;
+  const savedUser = JSON.parse(localStorage.getItem("avefit_user") || "null");
+  if (savedUser?.account_status && savedUser.account_status !== "Active") {
+    return <Navigate to="/user/pending" replace />;
+  }
   return children;
 }
 
 // Guards the post-onboarding dashboard routes: bounces anyone who hasn't
 // finished the assessment/goal/availability/coach flow back into it.
 function DashboardProtectedRoute({ children }) {
-  const token = localStorage.getItem("avefit_user_token");
+  const token = sessionStorage.getItem("avefit_user_token");
   if (!token) return <Navigate to="/user/login" replace />;
   const savedUser = JSON.parse(localStorage.getItem("avefit_user") || "null");
   if (savedUser?.account_status && savedUser.account_status !== "Active") return <Navigate to="/user/pending" replace />;
@@ -64,7 +68,7 @@ function DashboardProtectedRoute({ children }) {
 }
 
 function TrainerProtectedRoute({ children }) {
-  const token = localStorage.getItem("avefit_trainer_token");
+  const token = sessionStorage.getItem("avefit_trainer_token");
   if (!token) return <Navigate to="/trainer/login" replace />;
   const savedTrainer = JSON.parse(localStorage.getItem("avefit_trainer") || "null");
   if (savedTrainer?.status && savedTrainer.status !== "Active") return <Navigate to="/trainer/login" replace />;

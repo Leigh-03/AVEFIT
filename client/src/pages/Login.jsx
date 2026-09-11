@@ -17,7 +17,7 @@ export default function Login() {
     setLoading(true); setError("");
     try {
       const res = await axios.post("http://localhost:5000/api/admin/login", { email, password });
-      localStorage.setItem("avefit_token", res.data.token);
+      sessionStorage.setItem("avefit_token", res.data.token);
       localStorage.setItem("avefit_admin", JSON.stringify(res.data.admin));
       navigate("/admin/dashboard");
     } catch (err) {

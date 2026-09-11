@@ -29,7 +29,7 @@ export default function Sidebar() {
   }, [location.pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem("avefit_token");
+    sessionStorage.removeItem("avefit_token");
     localStorage.removeItem("avefit_admin");
     navigate("/login");
   };

@@ -1,27 +1,29 @@
 const pool = require("../db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { validateRegistration, validateEmail, validateName, validatePhone, validateImageDataUrl, normalizeEmail, publicUser } = require("../utils/security");
 
 // POST register
 const register = async (req, res) => {
   try {
     const { first_name, last_name, email, password, phone } = req.body;
-    if (!first_name || !last_name || !email || !password)
-      return res.status(400).json({ success: false, message: "All fields are required." });
+    const validationError = validateRegistration({ first_name, last_name, email, password, phone });
+    if (validationError) return res.status(400).json({ success: false, message: validationError });
 
-    const existing = await pool.query("SELECT user_id FROM users WHERE email = $1", [email]);
+    const normalizedEmail = normalizeEmail(email);
+    const existing = await pool.query("SELECT user_id FROM users WHERE LOWER(email) = $1", [normalizedEmail]);
     if (existing.rows.length > 0)
       return res.status(409).json({ success: false, message: "Email already registered." });
 
     // New accounts must be approved by the gym admin before they can log in.
     const accountStatus = "Pending";
 
-    const hashed = await bcrypt.hash(password, 10);
+    const hashed = await bcrypt.hash(password, 12);
     const result = await pool.query(`
       INSERT INTO users (first_name, last_name, email, password, phone, account_status)
       VALUES ($1,$2,$3,$4,$5,$6)
       RETURNING user_id, first_name, last_name, email, phone, account_status, trainer_id, fitness_goal, height, weight, gender, activity_level, setup_completed
-    `, [first_name, last_name, email, hashed, phone || null, accountStatus]);
+    `, [String(first_name).trim(), String(last_name).trim(), normalizedEmail, hashed, phone ? String(phone).trim() : null, accountStatus]);
 
     const user = result.rows[0];
 
@@ -34,7 +36,8 @@ const register = async (req, res) => {
     });
   } catch (err) {
     console.error("register error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+    if (err.code === "23505") return res.status(409).json({ success: false, message: "Email already registered." });
+    res.status(500).json({ success: false, message: "Unable to create account." });
   }
 };
 
@@ -42,7 +45,10 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (!validateEmail(email) || typeof password !== "string" || password.length === 0)
+      return res.status(400).json({ success: false, message: "Please provide a valid email and password." });
+    const normalizedEmail = normalizeEmail(email);
+    const result = await pool.query("SELECT user_id, first_name, last_name, email, password, phone, account_status, trainer_id, fitness_goal, height, weight, gender, activity_level, setup_completed, profile_image, token_version FROM users WHERE LOWER(email) = $1", [normalizedEmail]);
     if (result.rows.length === 0)
       return res.status(401).json({ success: false, message: "Invalid email or password." });
 
@@ -72,7 +78,7 @@ const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { user_id: user.user_id, email: user.email },
+      { user_id: user.user_id, email: user.email, token_version: Number(user.token_version || 0) },
       process.env.JWT_SECRET,
       { expiresIn: "8h" }
     );
@@ -80,21 +86,7 @@ const login = async (req, res) => {
     res.json({
       success: true,
       token,
-      user: {
-        user_id: user.user_id,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        phone: user.phone,
-        account_status: user.account_status,
-        trainer_id: user.trainer_id,
-        fitness_goal: user.fitness_goal,
-        height: user.height,
-        weight: user.weight,
-        gender: user.gender,
-        activity_level: user.activity_level,
-        setup_completed: user.setup_completed,
-      },
+      user: publicUser(user),
     });
   } catch (err) {
     console.error("login error:", err.message);
@@ -106,9 +98,9 @@ const login = async (req, res) => {
 const updatePhoto = async (req, res) => {
   try {
     const { profile_image } = req.body;
-    if (!profile_image) {
-      return res.status(400).json({ success: false, message: "profile_image is required." });
-    }
+    if (!profile_image) return res.status(400).json({ success: false, message: "profile_image is required." });
+    const imageCheck = validateImageDataUrl(profile_image);
+    if (!imageCheck.ok) return res.status(400).json({ success: false, message: imageCheck.message });
     await pool.query(
       "UPDATE users SET profile_image=$1, updated_at=NOW() WHERE user_id=$2",
       [profile_image, req.user.user_id]
@@ -151,6 +143,15 @@ const updateProfile = async (req, res) => {
     } = req.body;
 
 
+
+    if (first_name !== undefined && !validateName(first_name)) return res.status(400).json({ success: false, message: "Invalid first name." });
+    if (last_name !== undefined && !validateName(last_name)) return res.status(400).json({ success: false, message: "Invalid last name." });
+    if (email !== undefined && !validateEmail(email)) return res.status(400).json({ success: false, message: "Please provide a valid email address." });
+    if (phone !== undefined && !validatePhone(phone)) return res.status(400).json({ success: false, message: "Please provide a valid phone number." });
+    if (profile_image !== undefined && profile_image !== null && profile_image !== "") {
+      const imageCheck = validateImageDataUrl(profile_image);
+      if (!imageCheck.ok) return res.status(400).json({ success: false, message: imageCheck.message });
+    }
 
     // When onboarding selects a coach, make sure the coach is still active.
     if (trainer_id !== undefined && trainer_id !== null && trainer_id !== "") {
@@ -207,7 +208,7 @@ const updateProfile = async (req, res) => {
         updated_at=NOW()
       WHERE user_id=$22
     `, [
-      first_name, last_name, email, gender, birth_date || null, height || null, weight || null, fitness_goal, activity_level, phone,
+      first_name ? String(first_name).trim() : first_name, last_name ? String(last_name).trim() : last_name, email ? normalizeEmail(email) : email, gender, birth_date || null, height || null, weight || null, fitness_goal, activity_level, phone,
       age ?? null,
       target_weight ?? null,
       workout_days_per_week ?? null,

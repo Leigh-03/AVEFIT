@@ -1,6 +1,7 @@
 const pool = require("../db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { validateEmail, validatePassword, validateName, validatePhone, validateImageDataUrl, normalizeEmail } = require("../utils/security");
 
 const ALLOWED_SPECIALIZATIONS = [
   "High-Intensity Interval Training (HIIT)",
@@ -58,16 +59,22 @@ const getTrainerById = async (req, res) => {
 const createTrainer = async (req, res) => {
   try {
     const { full_name, email, phone, specializations, password, photo_url, goal_specialty, bio } = req.body;
-    const hashed = password ? await bcrypt.hash(password, 10) : null;
+    if (!validateName(full_name)) return res.status(400).json({ success: false, message: "Trainer name must be 2-50 characters." });
+    if (!validateEmail(email)) return res.status(400).json({ success: false, message: "Please provide a valid trainer email." });
+    if (!validatePhone(phone)) return res.status(400).json({ success: false, message: "Please provide a valid phone number." });
+    if (password && !validatePassword(password)) return res.status(400).json({ success: false, message: "Password must be 10-72 characters and include letters, numbers, and a special character." });
+    if (photo_url) { const imageCheck = validateImageDataUrl(photo_url); if (!imageCheck.ok) return res.status(400).json({ success: false, message: imageCheck.message }); }
+    const hashed = password ? await bcrypt.hash(password, 12) : null;
     const result = await pool.query(`
       INSERT INTO trainers (full_name, email, phone, specializations, password, photo_url, goal_specialty, bio, status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Pending')
       RETURNING trainer_id, full_name, email, phone, specializations, photo_url, goal_specialty, bio, status, created_at
-    `, [full_name, email, phone, sanitizeSpecializations(specializations), hashed, photo_url || null, goal_specialty || null, bio || null]);
+    `, [String(full_name).trim(), normalizeEmail(email), phone ? String(phone).trim() : null, sanitizeSpecializations(specializations), hashed, photo_url || null, goal_specialty || null, bio || null]);
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (err) {
     console.error("createTrainer error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+    if (err.code === "23505") return res.status(409).json({ success: false, message: "A trainer with that email already exists." });
+    res.status(500).json({ success: false, message: "Unable to create trainer." });
   }
 };
 
@@ -76,24 +83,30 @@ const updateTrainer = async (req, res) => {
   try {
     const { id } = req.params;
     const { full_name, email, phone, specializations, status, password, photo_url, goal_specialty, bio } = req.body;
+    if (!validateName(full_name)) return res.status(400).json({ success: false, message: "Trainer name must be 2-50 characters." });
+    if (!validateEmail(email)) return res.status(400).json({ success: false, message: "Please provide a valid trainer email." });
+    if (!validatePhone(phone)) return res.status(400).json({ success: false, message: "Please provide a valid phone number." });
+    if (!["Pending", "Active", "Rejected", "Inactive"].includes(status)) return res.status(400).json({ success: false, message: "Invalid trainer status." });
+    if (password && !validatePassword(password)) return res.status(400).json({ success: false, message: "Password must be 10-72 characters and include letters, numbers, and a special character." });
+    if (photo_url) { const imageCheck = validateImageDataUrl(photo_url); if (!imageCheck.ok) return res.status(400).json({ success: false, message: imageCheck.message }); }
 
     if (password) {
-      const hashed = await bcrypt.hash(password, 10);
+      const hashed = await bcrypt.hash(password, 12);
       await pool.query(`
         UPDATE trainers
-        SET full_name=$1, email=$2, phone=$3, specializations=$4, status=$5, password=$6,
+        SET full_name=$1, email=$2, phone=$3, specializations=$4, status=$5, password=$6, token_version=token_version+1,
             photo_url=COALESCE($7, photo_url), goal_specialty=COALESCE($8, goal_specialty), bio=COALESCE($9, bio),
             updated_at=NOW()
         WHERE trainer_id=$10
-      `, [full_name, email, phone, sanitizeSpecializations(specializations), status, hashed, photo_url || null, goal_specialty || null, bio || null, id]);
+      `, [String(full_name).trim(), normalizeEmail(email), phone ? String(phone).trim() : null, sanitizeSpecializations(specializations), status, hashed, photo_url || null, goal_specialty || null, bio || null, id]);
     } else {
       await pool.query(`
         UPDATE trainers
-        SET full_name=$1, email=$2, phone=$3, specializations=$4, status=$5,
+        SET full_name=$1, email=$2, phone=$3, specializations=$4, status=$5, token_version=token_version+1,
             photo_url=COALESCE($6, photo_url), goal_specialty=COALESCE($7, goal_specialty), bio=COALESCE($8, bio),
             updated_at=NOW()
         WHERE trainer_id=$9
-      `, [full_name, email, phone, sanitizeSpecializations(specializations), status, photo_url || null, goal_specialty || null, bio || null, id]);
+      `, [String(full_name).trim(), normalizeEmail(email), phone ? String(phone).trim() : null, sanitizeSpecializations(specializations), status, photo_url || null, goal_specialty || null, bio || null, id]);
     }
     res.json({ success: true, message: "Trainer updated." });
   } catch (err) {
@@ -107,7 +120,7 @@ const approveTrainer = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
-      "UPDATE trainers SET status = 'Active', updated_at = NOW() WHERE trainer_id = $1 RETURNING trainer_id, status",
+      "UPDATE trainers SET status = 'Active', token_version = token_version + 1, updated_at = NOW() WHERE trainer_id = $1 RETURNING trainer_id, status",
       [id]
     );
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: "Trainer not found." });
@@ -123,7 +136,7 @@ const rejectTrainer = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
-      "UPDATE trainers SET status = 'Rejected', updated_at = NOW() WHERE trainer_id = $1 RETURNING trainer_id, status",
+      "UPDATE trainers SET status = 'Rejected', token_version = token_version + 1, updated_at = NOW() WHERE trainer_id = $1 RETURNING trainer_id, status",
       [id]
     );
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: "Trainer not found." });
@@ -139,7 +152,7 @@ const deactivateTrainer = async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query(
-      "UPDATE trainers SET status = 'Inactive', updated_at = NOW() WHERE trainer_id = $1",
+      "UPDATE trainers SET status = 'Inactive', token_version = token_version + 1, updated_at = NOW() WHERE trainer_id = $1",
       [id]
     );
     res.json({ success: true, message: "Trainer deactivated." });
@@ -200,21 +213,14 @@ const getTrainerRoster = async (req, res) => {
 const loginTrainer = async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password)
-      return res.status(400).json({ success: false, message: "Email and password are required." });
+    if (!validateEmail(email) || typeof password !== "string" || !password)
+      return res.status(400).json({ success: false, message: "Please provide a valid email and password." });
 
-    const result = await pool.query("SELECT * FROM trainers WHERE email = $1", [email]);
+    const result = await pool.query("SELECT trainer_id, full_name, email, phone, specializations, goal_specialty, photo_url, status, password, token_version FROM trainers WHERE LOWER(email) = $1", [normalizeEmail(email)]);
     if (result.rows.length === 0)
       return res.status(401).json({ success: false, message: "Invalid email or password." });
 
     const trainer = result.rows[0];
-
-    if (trainer.status !== "Active") {
-      if (trainer.status === "Rejected") {
-        return res.status(403).json({ success: false, status: "Rejected", message: "Your trainer account was not approved. Please contact the gym administrator." });
-      }
-      return res.status(403).json({ success: false, status: "Pending", message: "Your trainer account is pending approval. Please wait 1-3 working days while the gym administrator reviews your account." });
-    }
 
     if (!trainer.password)
       return res.status(401).json({ success: false, message: "This account doesn't have portal access set up yet — ask the gym admin to set a password for you." });
@@ -223,11 +229,18 @@ const loginTrainer = async (req, res) => {
     if (!valid)
       return res.status(401).json({ success: false, message: "Invalid email or password." });
 
+    if (trainer.status !== "Active") {
+      if (trainer.status === "Rejected") {
+        return res.status(403).json({ success: false, status: "Rejected", message: "Your trainer account was not approved. Please contact the gym administrator." });
+      }
+      return res.status(403).json({ success: false, status: trainer.status || "Pending", message: "Your trainer account is not active. Please contact the gym administrator." });
+    }
+
     if (trainer.status === "Inactive")
       return res.status(403).json({ success: false, message: "This trainer account is inactive." });
 
     const token = jwt.sign(
-      { trainer_id: trainer.trainer_id, email: trainer.email },
+      { trainer_id: trainer.trainer_id, email: trainer.email, token_version: Number(trainer.token_version || 0) },
       process.env.JWT_SECRET,
       { expiresIn: "8h" }
     );
@@ -313,9 +326,9 @@ const getMyProfile = async (req, res) => {
 const updateMyPhoto = async (req, res) => {
   try {
     const { photo_url } = req.body;
-    if (!photo_url) {
-      return res.status(400).json({ success: false, message: "photo_url is required." });
-    }
+    if (!photo_url) return res.status(400).json({ success: false, message: "photo_url is required." });
+    const imageCheck = validateImageDataUrl(photo_url);
+    if (!imageCheck.ok) return res.status(400).json({ success: false, message: imageCheck.message });
     await pool.query(
       "UPDATE trainers SET photo_url=$1, updated_at=NOW() WHERE trainer_id=$2",
       [photo_url, req.trainer.trainer_id]

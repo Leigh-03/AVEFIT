@@ -5,10 +5,11 @@ const { register, login, getProfile, updateProfile, updatePhoto } = require("../
 const { getUserWorkoutPlan, getUserPlans, addWorkoutSession, updateWorkoutSession, completeSession, deleteWorkoutSession, resetWeek } = require("../controllers/userWorkoutController");
 const { getProgress, logProgress, calculatePrediction, autoPredict, getUserNotifications } = require("../controllers/userProgressController");
 const { getActiveTrainers } = require("../controllers/trainerController");
+const { userLoginLimiter, signupLimiter } = require("../middleware/rateLimit");
 
 // Auth
-router.post("/register", register);
-router.post("/login", login);
+router.post("/register", signupLimiter, register);
+router.post("/login", userLoginLimiter, login);
 
 // Profile
 router.get("/profile", verifyUser, getProfile);

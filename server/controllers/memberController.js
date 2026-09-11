@@ -358,6 +358,7 @@ const approveMember = async (req, res) => {
       UPDATE users
       SET
         account_status = 'Active',
+        token_version = token_version + 1,
         updated_at = CURRENT_TIMESTAMP
       WHERE user_id = $1
       RETURNING user_id, account_status
@@ -404,6 +405,7 @@ const rejectMember = async (req, res) => {
       UPDATE users
       SET
         account_status = 'Rejected',
+        token_version = token_version + 1,
         updated_at = CURRENT_TIMESTAMP
       WHERE user_id = $1
       RETURNING user_id, account_status

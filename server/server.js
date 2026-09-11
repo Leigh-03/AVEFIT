@@ -19,9 +19,29 @@ const userRoutes = require("./routes/userRoutes");
 const userExerciseRoutes = require("./routes/userExerciseRoutes");
 
 const app = express();
+app.disable("x-powered-by");
 
-app.use(cors());
-app.use(express.json());
+// Keep CORS explicit instead of allowing every website to call the API.
+const allowedOrigins = (process.env.CLIENT_ORIGINS || "http://localhost:5173,http://localhost:5174")
+  .split(",").map((value) => value.trim()).filter(Boolean);
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("CORS origin not allowed"));
+  },
+}));
+
+// Basic security headers without adding another runtime dependency.
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  next();
+});
+
+// Profile photos are compressed to small data URLs by the client and validated again server-side.
+app.use(express.json({ limit: "3mb" }));
 
 app.get("/", (req, res) => res.send("AveFit API is running 🚀"));
 
@@ -40,10 +60,20 @@ app.use("/api/user", userRoutes);
 app.use("/api/user/exercises", userExerciseRoutes);
 app.use("/api/user/exercise-categories", userExerciseRoutes);
 
+// Do not expose stack traces or database details to clients.
+app.use((err, req, res, next) => {
+  console.error("API error:", err.message);
+  if (err.message === "CORS origin not allowed") {
+    return res.status(403).json({ success: false, message: "Request origin is not allowed." });
+  }
+  if (err.type === "entity.too.large") {
+    return res.status(413).json({ success: false, message: "Request is too large." });
+  }
+  res.status(500).json({ success: false, message: "Internal server error." });
+});
+
 const PORT = process.env.PORT || 5000;
 
-// Finish required database setup before accepting API requests. This prevents
-// registration from failing when the approval migration has not been run yet.
 initializeDatabase()
   .then(() => {
     app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
