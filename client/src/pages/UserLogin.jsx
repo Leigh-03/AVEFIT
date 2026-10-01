@@ -4,8 +4,10 @@ import { Eye, EyeOff } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 import { useUserAuth } from "../context/UserAuthContext";
 import userApi from "../userApi";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 
 export default function UserLogin() {
+ 
   const navigate = useNavigate();
   const { loginUser } = useUserAuth();
   const [mode, setMode] = useState("login");
@@ -54,6 +56,42 @@ export default function UserLogin() {
       setLoading(false);
     }
   };
+//
+  const handleGoogleLogin = async (idToken) => {
+  setLoading(true);
+  setError("");
+  setPendingNotice(false);
+
+  try {
+    const res = await userApi.post("/google-login", {
+      idToken,
+    });
+
+    if (res.data.pending_approval) {
+      navigate("/user/pending");
+      return;
+    }
+
+    loginUser(res.data.user, res.data.token);
+
+    goToDestination(res.data.user);
+  } catch (err) {
+    if (
+      err.response?.status === 403 &&
+      err.response?.data?.status === "Pending"
+    ) {
+      setPendingNotice(true);
+      setError("");
+    } else {
+      setError(
+        err.response?.data?.message ||
+          "Google login failed."
+      );
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleSignup = async () => {
     if (
@@ -136,6 +174,17 @@ export default function UserLogin() {
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
+              <div className="flex items-center gap-3 my-4">
+  <div className="h-px bg-slate-200 flex-1" />
+  <span className="text-xs text-slate-400">OR</span>
+  <div className="h-px bg-slate-200 flex-1" />
+</div>
+
+<GoogleSignInButton
+  onSuccess={handleGoogleLogin}
+  onError={() => setError("Google sign-in was cancelled or failed.")}
+  disabled={loading}
+/>
 
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">

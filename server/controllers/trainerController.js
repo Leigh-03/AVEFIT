@@ -1,8 +1,140 @@
+const { verifyGoogleToken } = require("../utils/googleAuth");
 const pool = require("../db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { validateEmail, validatePassword, validateName, validatePhone, validateImageDataUrl, normalizeEmail } = require("../utils/security");
+const { verifyGoogleToken } = require("../utils/googleAuth");
+const googleLoginTrainer = async (req, res) => {
+  try {
+    const { idToken } = req.body;
 
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Google authentication token is required.",
+      });
+    }
+
+    const google = await verifyGoogleToken(idToken);
+
+    // Find trainer by Google ID first
+    let result = await pool.query(
+      `SELECT trainer_id, full_name, email, phone,
+              specializations, goal_specialty, photo_url,
+              status, password, token_version, google_id
+       FROM trainers
+       WHERE google_id = $1
+       LIMIT 1`,
+      [google.google_id]
+    );
+
+    // If Google ID is not linked yet,
+    // find the existing trainer using their email.
+    if (result.rows.length === 0) {
+      result = await pool.query(
+        `SELECT trainer_id, full_name, email, phone,
+                specializations, goal_specialty, photo_url,
+                status, password, token_version, google_id
+         FROM trainers
+         WHERE LOWER(email) = $1
+         LIMIT 1`,
+        [google.email]
+      );
+
+      // Do not allow Google to create a new trainer.
+      if (result.rows.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "This Google account is not registered as an AveFit trainer.",
+        });
+      }
+
+      const trainer = result.rows[0];
+
+      // Link this Google account to the existing trainer.
+      await pool.query(
+        `UPDATE trainers
+         SET google_id = $1,
+             updated_at = NOW()
+         WHERE trainer_id = $2`,
+        [google.google_id, trainer.trainer_id]
+      );
+
+      trainer.google_id = google.google_id;
+
+      result = {
+        rows: [trainer],
+      };
+    }
+
+    const trainer = result.rows[0];
+
+    // Make sure the Google account is actually linked
+    // to this trainer.
+    if (trainer.google_id !== google.google_id) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "This Google account is not linked to the AveFit trainer account.",
+      });
+    }
+
+    // Only active trainers can log in.
+    if (trainer.status !== "Active") {
+      if (trainer.status === "Rejected") {
+        return res.status(403).json({
+          success: false,
+          status: "Rejected",
+          message:
+            "Your trainer account was not approved. Please contact the gym administrator.",
+        });
+      }
+
+      return res.status(403).json({
+        success: false,
+        status: trainer.status || "Pending",
+        message:
+          "Your trainer account is not active. Please contact the gym administrator.",
+      });
+    }
+
+    // Create the normal AveFit JWT.
+    const token = jwt.sign(
+      {
+        trainer_id: trainer.trainer_id,
+        email: trainer.email,
+        token_version: Number(trainer.token_version || 0),
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "8h",
+      }
+    );
+
+    return res.json({
+      success: true,
+      message: "Google login successful.",
+      token,
+      trainer: {
+        trainer_id: trainer.trainer_id,
+        full_name: trainer.full_name,
+        email: trainer.email,
+        phone: trainer.phone,
+        specializations: trainer.specializations || [],
+        goal_specialty: trainer.goal_specialty,
+        photo_url: trainer.photo_url,
+      },
+    });
+  } catch (error) {
+    console.error("googleLoginTrainer error:", error.message);
+
+    return res.status(401).json({
+      success: false,
+      message: "Google authentication failed.",
+    });
+  }
+};
 const ALLOWED_SPECIALIZATIONS = [
   "High-Intensity Interval Training (HIIT)",
   "Circuit Training",
@@ -202,6 +334,139 @@ const getTrainerRoster = async (req, res) => {
   } catch (err) {
     console.error("getTrainerRoster error:", err.message);
     res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
+// =========================================================
+// GOOGLE TRAINER LOGIN
+// ONLY EXISTING TRAINERS CAN USE THIS
+// =========================================================
+
+const googleLoginTrainer = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Google authentication token is required.",
+      });
+    }
+
+    const google = await verifyGoogleToken(idToken);
+
+    // First find trainer using Google ID.
+    let result = await pool.query(
+      `SELECT trainer_id, full_name, email, phone,
+              specializations, goal_specialty, photo_url,
+              status, password, token_version, google_id
+       FROM trainers
+       WHERE google_id = $1
+       LIMIT 1`,
+      [google.google_id]
+    );
+
+    // If not linked yet, find existing trainer using
+    // their verified Google email.
+    if (result.rows.length === 0) {
+      result = await pool.query(
+        `SELECT trainer_id, full_name, email, phone,
+                specializations, goal_specialty, photo_url,
+                status, password, token_version, google_id
+         FROM trainers
+         WHERE LOWER(email) = $1
+         LIMIT 1`,
+        [google.email]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "This Google account is not registered as an AveFit trainer.",
+        });
+      }
+
+      const trainer = result.rows[0];
+
+      // Link Google account to the existing trainer.
+      await pool.query(
+        `UPDATE trainers
+         SET google_id = $1,
+             updated_at = NOW()
+         WHERE trainer_id = $2`,
+        [google.google_id, trainer.trainer_id]
+      );
+
+      trainer.google_id = google.google_id;
+
+      result = {
+        rows: [trainer],
+      };
+    }
+
+    const trainer = result.rows[0];
+
+    if (trainer.google_id !== google.google_id) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "This Google account is not linked to the AveFit trainer account.",
+      });
+    }
+
+    if (trainer.status !== "Active") {
+      if (trainer.status === "Rejected") {
+        return res.status(403).json({
+          success: false,
+          status: "Rejected",
+          message:
+            "Your trainer account was not approved. Please contact the gym administrator.",
+        });
+      }
+
+      return res.status(403).json({
+        success: false,
+        status: trainer.status || "Pending",
+        message:
+          "Your trainer account is not active. Please contact the gym administrator.",
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        trainer_id: trainer.trainer_id,
+        email: trainer.email,
+        token_version: Number(trainer.token_version || 0),
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "8h",
+      }
+    );
+
+    return res.json({
+      success: true,
+      message: "Google login successful.",
+      token,
+      trainer: {
+        trainer_id: trainer.trainer_id,
+        full_name: trainer.full_name,
+        email: trainer.email,
+        phone: trainer.phone,
+        specializations: trainer.specializations || [],
+        goal_specialty: trainer.goal_specialty,
+        photo_url: trainer.photo_url,
+      },
+    });
+  } catch (error) {
+    console.error("googleLoginTrainer error:", error.message);
+
+    return res.status(401).json({
+      success: false,
+      message: "Google authentication failed.",
+    });
   }
 };
 
@@ -438,5 +703,5 @@ module.exports = {
   getTrainers, getTrainerById, createTrainer, updateTrainer, approveTrainer, rejectTrainer, deactivateTrainer,
   getActiveTrainers, getTrainerRoster,
   loginTrainer, getMyRoster, getMyProfile, updateMyPhoto, getExerciseCatalog,
-  getRosterMemberSessions, assignSessionAsTrainer, deleteSessionAsTrainer,
+  getRosterMemberSessions, assignSessionAsTrainer, deleteSessionAsTrainer, googleLoginTrainer,
 };

@@ -1,3 +1,4 @@
+const { verifyGoogleToken } = require("../utils/googleAuth");
 const pool = require("../db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -93,6 +94,9 @@ const login = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+//New Google login function
+
 
 // PUT update just the profile photo
 const updatePhoto = async (req, res) => {
@@ -279,4 +283,148 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getProfile, updateProfile, updatePhoto };
+// =========================================================
+// GOOGLE USER LOGIN
+// =========================================================
+
+const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Google authentication token is required.",
+      });
+    }
+
+    const google = await verifyGoogleToken(idToken);
+
+    // First try to find the Google account directly.
+    let result = await pool.query(
+      `SELECT user_id, first_name, last_name, email, password,
+              phone, account_status, trainer_id, fitness_goal,
+              height, weight, gender, activity_level,
+              setup_completed, profile_image, token_version,
+              google_id
+       FROM users
+       WHERE google_id = $1
+       LIMIT 1`,
+      [google.google_id]
+    );
+
+    // If Google ID isn't linked yet, find the existing user
+    // by verified Google email.
+    if (result.rows.length === 0) {
+      result = await pool.query(
+        `SELECT user_id, first_name, last_name, email, password,
+                phone, account_status, trainer_id, fitness_goal,
+                height, weight, gender, activity_level,
+                setup_completed, profile_image, token_version,
+                google_id
+         FROM users
+         WHERE LOWER(email) = $1
+         LIMIT 1`,
+        [google.email]
+      );
+
+      // Google account doesn't exist in AveFit yet.
+      if (result.rows.length === 0) {
+        const newUser = await pool.query(
+          `INSERT INTO users
+            (first_name, last_name, email, google_id, account_status)
+           VALUES ($1, $2, $3, $4, 'Pending')
+           RETURNING
+            user_id, first_name, last_name, email,
+            phone, account_status, trainer_id, fitness_goal,
+            height, weight, gender, activity_level,
+            setup_completed, profile_image, token_version`,
+          [
+            google.first_name || "Google",
+            google.last_name || "User",
+            google.email,
+            google.google_id,
+          ]
+        );
+
+        return res.status(201).json({
+          success: true,
+          message:
+            "Google account registered and submitted for admin approval.",
+          user: newUser.rows[0],
+          pending_approval: true,
+        });
+      }
+
+      const existingUser = result.rows[0];
+
+      // Link the existing AveFit account to Google.
+      await pool.query(
+        `UPDATE users
+         SET google_id = $1,
+             updated_at = NOW()
+         WHERE user_id = $2`,
+        [google.google_id, existingUser.user_id]
+      );
+
+      existingUser.google_id = google.google_id;
+
+      result = {
+        rows: [existingUser],
+      };
+    }
+
+    const user = result.rows[0];
+
+    const accountStatus = String(
+      user.account_status || "pending"
+    ).toLowerCase();
+
+    if (accountStatus === "rejected") {
+      return res.status(403).json({
+        success: false,
+        status: "Rejected",
+        message:
+          "Your AveFit account was not approved. Please contact the gym administrator for assistance.",
+      });
+    }
+
+    if (accountStatus !== "active") {
+      return res.status(403).json({
+        success: false,
+        status: "Pending",
+        message:
+          "Your account is still pending approval. Please wait while the gym administrator reviews your registration.",
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        user_id: user.user_id,
+        email: user.email,
+        token_version: Number(user.token_version || 0),
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "8h",
+      }
+    );
+
+    return res.json({
+      success: true,
+      message: "Google login successful.",
+      token,
+      user: publicUser(user),
+    });
+  } catch (error) {
+    console.error("googleLogin error:", error.message);
+
+    return res.status(401).json({
+      success: false,
+      message: "Google authentication failed.",
+    });
+  }
+};
+
+module.exports = { register, login, getProfile, updateProfile, updatePhoto, googleLogin };
+
